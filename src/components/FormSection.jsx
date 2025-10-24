@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { gsap } from "gsap";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
@@ -12,11 +12,13 @@ export default function FormSection() {
     birthDate: "",
     educationDegree: "",
     areaOfInterest: "",
+    favoriteGame: "",
   });
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   // Refs for GSAP animations
   const sectionRef = useRef(null);
@@ -113,14 +115,104 @@ export default function FormSection() {
         if (!value) return "Please select your area of interest";
         return "";
 
+      case "favoriteGame":
+        if (formData.areaOfInterest === "gaming" && !value)
+          return "Please select your favorite game";
+        return "";
+
       default:
         return "";
+    }
+  };
+
+  // Define form steps
+  const steps = useMemo(() => {
+    const baseSteps = [
+      {
+        title: "Let's start with your name",
+        fields: ["firstName", "lastName"],
+      },
+      {
+        title: "Your contact information",
+        fields: ["phoneNumber", "birthDate"],
+      },
+      {
+        title: "Tell us about yourself",
+        fields:
+          formData.areaOfInterest === "gaming"
+            ? ["educationDegree", "areaOfInterest", "favoriteGame"]
+            : ["educationDegree", "areaOfInterest"],
+      },
+    ];
+
+    return baseSteps;
+  }, [formData.areaOfInterest]);
+
+  const totalSteps = steps.length;
+  const currentStepData = steps[currentStep];
+  const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  const canGoNext = () => {
+    return currentStepData.fields.every((field) => {
+      const value = formData[field];
+      const error = validateField(field, value);
+      return value && !error;
+    });
+  };
+
+  const handleNext = () => {
+    // Validate current step fields
+    const stepErrors = {};
+    currentStepData.fields.forEach((field) => {
+      const error = validateField(field, formData[field]);
+      if (error) stepErrors[field] = error;
+    });
+
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors((prev) => ({ ...prev, ...stepErrors }));
+      setTouched((prev) => {
+        const newTouched = { ...prev };
+        currentStepData.fields.forEach((field) => {
+          newTouched[field] = true;
+        });
+        return newTouched;
+      });
+      return;
+    }
+
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep((prev) => prev + 1);
+      // Animate to next step
+      gsap.fromTo(
+        containerRef.current,
+        { x: 50, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
+      );
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+      // Animate to previous step
+      gsap.fromTo(
+        containerRef.current,
+        { x: -50, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
+      );
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear favorite game if user changes away from gaming
+    if (name === "areaOfInterest" && value !== "gaming") {
+      setFormData((prev) => ({ ...prev, favoriteGame: "" }));
+      setErrors((prev) => ({ ...prev, favoriteGame: "" }));
+      setTouched((prev) => ({ ...prev, favoriteGame: false }));
+    }
 
     // Validate field on change if already touched
     if (touched[name]) {
@@ -132,6 +224,17 @@ export default function FormSection() {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (currentStep < totalSteps - 1 && canGoNext()) {
+        handleNext();
+      } else if (currentStep === totalSteps - 1 && canGoNext()) {
+        handleSubmit(e);
+      }
+    }
   };
 
   const validateForm = () => {
@@ -180,9 +283,11 @@ export default function FormSection() {
         birthDate: "",
         educationDegree: "",
         areaOfInterest: "",
+        favoriteGame: "",
       });
       setTouched({});
       setErrors({});
+      setCurrentStep(0);
 
       // Show success message (you can replace with a toast or modal)
       alert("Application submitted successfully!");
@@ -225,128 +330,213 @@ export default function FormSection() {
       {/* Form Container with Improved Layout */}
       <div ref={containerRef} className="relative z-10 w-full max-w-4xl">
         <div className="bg-linear-to-br from-dark/60 via-[#1a0a14]/70 to-dark/60 backdrop-blur-lg rounded-3xl p-8 md:p-12 lg:p-16 border border-gradient1/40 shadow-2xl shadow-gradient1/10">
-          {/* Header */}
-          <header className="text-center mb-12">
-            <div className="relative inline-block mb-8">
+          {/* Header with Logo */}
+          <header className="text-center mb-8">
+            <div className="relative inline-block mb-6">
               <div className="absolute inset-0 bg-gradient1 blur-2xl opacity-40 rounded-full" />
               <img
                 src={logo}
                 alt="Logo"
-                className="relative w-28 md:w-32 h-auto mx-auto drop-shadow-2xl"
+                className="relative w-20 md:w-24 h-auto mx-auto drop-shadow-2xl"
               />
             </div>
-            <h2 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold bg-linear-to-br from-gradient1 via-gradient3 to-gradient1 bg-clip-text text-transparent mb-4 tracking-wider drop-shadow-lg">
-              Join Us
-            </h2>
-            <p className="text-light text-lg md:text-xl font-body max-w-md mx-auto">
-              Fill in your details to get started on your journey
-            </p>
-            <div className="h-1 w-20 bg-linear-to-r from-gradient1 to-gradient3 mx-auto mt-6 rounded-full shadow-lg shadow-gradient1/50" />
           </header>
+
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-light/60 text-sm font-body">
+                Step {currentStep + 1} of {totalSteps}
+              </span>
+              <span className="text-light/60 text-sm font-body">
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <div className="w-full h-2 bg-light/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-gradient1 to-gradient3 transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Step Title */}
+          <div className="text-center mb-10">
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-br from-gradient1 via-gradient3 to-gradient1 bg-clip-text text-transparent mb-3 tracking-wider">
+              {currentStepData.title}
+            </h2>
+            <p className="text-light/70 text-sm font-body">
+              Press Enter to continue ↵
+            </p>
+          </div>
 
           {/* Form */}
           <form
             onSubmit={handleSubmit}
+            onKeyPress={handleKeyPress}
             className="flex flex-col gap-8"
             noValidate
           >
-            {/* First Name & Last Name */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                label="First Name"
-                name="firstName"
-                type="text"
-                value={formData.firstName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.firstName && errors.firstName}
-                placeholder="Enter your first name"
-              />
-              <FormField
-                label="Last Name"
-                name="lastName"
-                type="text"
-                value={formData.lastName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.lastName && errors.lastName}
-                placeholder="Enter your last name"
-              />
-            </div>
+            {/* Step 0: First Name & Last Name */}
+            {currentStep === 0 && (
+              <div className="space-y-6">
+                <FormField
+                  label="First Name"
+                  name="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.firstName && errors.firstName}
+                  placeholder="Enter your first name"
+                />
+                <FormField
+                  label="Last Name"
+                  name="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.lastName && errors.lastName}
+                  placeholder="Enter your last name"
+                />
+              </div>
+            )}
 
-            {/* Phone & Birth Date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                label="Phone Number"
-                name="phoneNumber"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.phoneNumber && errors.phoneNumber}
-                placeholder="+20 10 1234 5678"
-              />
-              <FormField
-                label="Birth Date"
-                name="birthDate"
-                type="date"
-                value={formData.birthDate}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.birthDate && errors.birthDate}
-              />
-            </div>
+            {/* Step 1: Phone & Birth Date */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <FormField
+                  label="Phone Number"
+                  name="phoneNumber"
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.phoneNumber && errors.phoneNumber}
+                  placeholder="+20 10 1234 5678"
+                />
+                <FormField
+                  label="Birth Date"
+                  name="birthDate"
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.birthDate && errors.birthDate}
+                />
+              </div>
+            )}
 
-            {/* Education & Area of Interest */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SelectField
-                label="Education Degree"
-                name="educationDegree"
-                value={formData.educationDegree}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.educationDegree && errors.educationDegree}
-                options={[
-                  { value: "", label: "Select your degree" },
-                  { value: "high-school", label: "High School" },
-                  { value: "associate", label: "Associate Degree" },
-                  { value: "bachelor", label: "Bachelor's Degree" },
-                  { value: "master", label: "Master's Degree" },
-                  { value: "phd", label: "Ph.D." },
-                  { value: "other", label: "Other" },
-                ]}
-              />
-              <SelectField
-                label="Area of Interest"
-                name="areaOfInterest"
-                value={formData.areaOfInterest}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.areaOfInterest && errors.areaOfInterest}
-                options={[
-                  { value: "", label: "Select your interest" },
-                  { value: "technology", label: "Technology" },
-                  { value: "design", label: "Design" },
-                  { value: "business", label: "Business" },
-                  { value: "marketing", label: "Marketing" },
-                  { value: "education", label: "Education" },
-                  { value: "healthcare", label: "Healthcare" },
-                  { value: "other", label: "Other" },
-                ]}
-              />
-            </div>
+            {/* Step 2: Education & Area of Interest */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <SelectField
+                  label="Education Degree"
+                  name="educationDegree"
+                  value={formData.educationDegree}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.educationDegree && errors.educationDegree}
+                  options={[
+                    { value: "", label: "Select your degree" },
+                    { value: "high-school", label: "High School" },
+                    { value: "associate", label: "Associate Degree" },
+                    { value: "bachelor", label: "Bachelor's Degree" },
+                    { value: "master", label: "Master's Degree" },
+                    { value: "phd", label: "Ph.D." },
+                    { value: "other", label: "Other" },
+                  ]}
+                />
+                <SelectField
+                  label="Area of Interest"
+                  name="areaOfInterest"
+                  value={formData.areaOfInterest}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.areaOfInterest && errors.areaOfInterest}
+                  options={[
+                    { value: "", label: "Select your interest" },
+                    { value: "technology", label: "Technology" },
+                    { value: "design", label: "Design" },
+                    { value: "business", label: "Business" },
+                    { value: "marketing", label: "Marketing" },
+                    { value: "education", label: "Education" },
+                    { value: "healthcare", label: "Healthcare" },
+                    { value: "gaming", label: "Gaming" },
+                    { value: "other", label: "Other" },
+                  ]}
+                />
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-4 px-8 py-5 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-lg font-semibold tracking-widest rounded-xl cursor-pointer transition-all duration-300 shadow-lg uppercase hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
-            >
-              <span className="relative z-10">
-                {isSubmitting ? "Submitting..." : "Submit Application"}
-              </span>
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            </button>
+                {/* Favorite Game - Conditionally shown when gaming is selected */}
+                {formData.areaOfInterest === "gaming" && (
+                  <SelectField
+                    label="What's your favorite game?"
+                    name="favoriteGame"
+                    value={formData.favoriteGame}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.favoriteGame && errors.favoriteGame}
+                    options={[
+                      { value: "", label: "Select your favorite game" },
+                      { value: "valorant", label: "Valorant" },
+                      {
+                        value: "league-of-legends",
+                        label: "League of Legends",
+                      },
+                      { value: "counter-strike", label: "Counter-Strike" },
+                      { value: "dota2", label: "Dota 2" },
+                      { value: "fortnite", label: "Fortnite" },
+                      { value: "apex-legends", label: "Apex Legends" },
+                      { value: "overwatch", label: "Overwatch" },
+                      { value: "minecraft", label: "Minecraft" },
+                      { value: "gta5", label: "GTA V" },
+                      { value: "fifa", label: "FIFA" },
+                      { value: "cod", label: "Call of Duty" },
+                      { value: "pubg", label: "PUBG" },
+                      { value: "rocket-league", label: "Rocket League" },
+                      { value: "other", label: "Other" },
+                    ]}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex gap-4 mt-6">
+              {currentStep > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="flex-1 px-6 py-4 bg-light/10 border border-gradient1/40 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 hover:bg-light/15 hover:border-gradient1/60"
+                >
+                  ← Previous
+                </button>
+              )}
+
+              {currentStep < totalSteps - 1 ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!canGoNext()}
+                  className="flex-1 px-6 py-4 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                >
+                  <span className="relative z-10">Continue →</span>
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !canGoNext()}
+                  className="flex-1 px-6 py-4 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                >
+                  <span className="relative z-10">
+                    {isSubmitting ? "Submitting..." : "Submit Application ✓"}
+                  </span>
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </div>
