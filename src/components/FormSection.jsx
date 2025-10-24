@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
-import LiquidEther from "./LiquidEther";
+import Orb from "./Orb";
 
 export default function FormSection() {
   const [formData, setFormData] = useState({
@@ -20,11 +20,51 @@ export default function FormSection() {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [orbHoverState, setOrbHoverState] = useState(false);
 
   // Refs for GSAP animations
   const sectionRef = useRef(null);
   const containerRef = useRef(null);
   const logoRef = useRef(null);
+  const interactionTimeoutRef = useRef(null);
+
+  // Handle user interaction for orb effect
+  const handleUserInteraction = () => {
+    setOrbHoverState(true);
+    
+    // Clear existing timeout
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+    
+    // Reset hover state after 2 seconds of no interaction
+    interactionTimeoutRef.current = setTimeout(() => {
+      setOrbHoverState(false);
+    }, 3500);
+  };
+
+  // Add global event listeners for mobile interactions
+  useEffect(() => {
+    const handleKeyDown = () => handleUserInteraction();
+    const handleTouchStart = () => handleUserInteraction();
+    const handleInput = () => handleUserInteraction();
+    
+    // Add event listeners
+    globalThis.addEventListener('keydown', handleKeyDown);
+    globalThis.addEventListener('touchstart', handleTouchStart);
+    globalThis.addEventListener('input', handleInput);
+    
+    return () => {
+      globalThis.removeEventListener('keydown', handleKeyDown);
+      globalThis.removeEventListener('touchstart', handleTouchStart);
+      globalThis.removeEventListener('input', handleInput);
+      
+      // Clear timeout on unmount
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // GSAP Animations
   useEffect(() => {
@@ -304,36 +344,24 @@ export default function FormSection() {
       ref={sectionRef}
       className="relative h-screen flex items-center justify-center overflow-hidden px-3 py-4"
     >
-      {/* LiquidEther Background */}
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 1,
-        }}
-      >
-        <LiquidEther
-          colors={["#5227FF", "#FF9FFC", "#B19EEF"]}
-          mouseForce={20}
-          cursorSize={100}
-          isViscous={false}
-          viscous={30}
-          iterationsViscous={32}
-          iterationsPoisson={32}
-          resolution={0.5}
-          isBounce={false}
-          autoDemo={true}
-          autoSpeed={0.5}
-          autoIntensity={2.2}
-          takeoverDuration={0.25}
-          autoResumeDelay={3000}
-          autoRampDuration={0.6}
-        />
+      {/* Orb Background */}
+      <div className="fixed inset-0 z-0 flex items-center justify-center">
+        <div 
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            maxWidth: "800px", 
+            maxHeight: "800px"
+          }}
+        >
+          <Orb
+            hoverIntensity={1.1}
+            rotateOnHover={true}
+            hue={0}
+            forceHoverState={orbHoverState}
+          />
+        </div>
       </div>
-
       {/* Logo - Outside Container */}
       <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center">
         <img
