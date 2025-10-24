@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
+import LiquidEther from "./LiquidEther";
 
 export default function FormSection() {
   const [formData, setFormData] = useState({
@@ -22,32 +23,30 @@ export default function FormSection() {
 
   // Refs for GSAP animations
   const sectionRef = useRef(null);
-  const gradientLeftRef = useRef(null);
-  const gradientRightRef = useRef(null);
   const containerRef = useRef(null);
+  const logoRef = useRef(null);
 
   // GSAP Animations
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Gradient animations - floating effect
-      gsap.to(gradientLeftRef.current, {
-        x: 30,
-        y: -30,
-        scale: 1.1,
+      // Logo animation - entrance effect
+      gsap.from(logoRef.current, {
+        scale: 0.8,
+        opacity: 0,
+        y: -50,
+        duration: 1.2,
+        ease: "power3.out",
+        delay: 0.2,
+      });
+
+      // Logo continuous subtle floating animation
+      gsap.to(logoRef.current, {
+        y: -15,
         duration: 4,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
-      });
-
-      gsap.to(gradientRightRef.current, {
-        x: -30,
-        y: 30,
-        scale: 1.1,
-        duration: 4.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
+        delay: 1.5,
       });
 
       // Container animation - entrance effect
@@ -57,6 +56,7 @@ export default function FormSection() {
         y: 30,
         duration: 1,
         ease: "power3.out",
+        delay: 0.5,
       });
 
       // Continuous subtle floating animation for the container
@@ -66,7 +66,7 @@ export default function FormSection() {
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
-        delay: 1,
+        delay: 2,
       });
     }, sectionRef);
 
@@ -302,46 +302,53 @@ export default function FormSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-screen flex items-center justify-center bg-linear-to-br from-[#1a0a14] via-[#0f0515] to-[#150a1f] overflow-hidden px-3 py-4"
+      className="relative h-screen flex items-center justify-center overflow-hidden px-3 py-4"
     >
-      {/* Animated Gradient Overlays */}
+      {/* LiquidEther Background */}
       <div
-        ref={gradientLeftRef}
-        className="absolute -top-1/4 -left-20 w-96 h-96 md:w-lg md:h-128 rounded-full opacity-60 blur-3xl pointer-events-none z-0"
         style={{
-          background:
-            "radial-gradient(circle, #791752 0%, #370862 50%, transparent 70%)",
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 1,
         }}
-      />
+      >
+        <LiquidEther
+          colors={["#5227FF", "#FF9FFC", "#B19EEF"]}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous={false}
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo={true}
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </div>
+
+      {/* Logo - Outside Container */}
+      <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center">
+        <img
+          src={logo}
+          alt="Logo"
+          className="w-25 md:w-30 h-auto drop-shadow-2xl mx-auto"
+        />
+      </div>
+
+      {/* Form Container with Glass Effect */}
       <div
-        ref={gradientRightRef}
-        className="absolute -bottom-1/4 -right-20 w-96 h-96 md:w-lg md:h-128 rounded-full opacity-60 blur-3xl pointer-events-none z-0"
-        style={{
-          background:
-            "radial-gradient(circle, #370862 0%, #791752 50%, transparent 70%)",
-        }}
-      />
-
-      {/* Decorative Elements */}
-      <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-gradient1 rounded-full animate-pulse opacity-70" />
-      <div className="absolute top-1/3 left-1/3 w-1 h-1 bg-gradient3 rounded-full animate-pulse delay-75 opacity-70" />
-      <div className="absolute bottom-1/3 right-1/3 w-1.5 h-1.5 bg-gradient1 rounded-full animate-pulse delay-150 opacity-70" />
-
-      {/* Form Container with Improved Layout */}
-      <div ref={containerRef} className="relative z-10 w-full max-w-2xl">
-        <div className="bg-linear-to-br from-dark/60 via-[#1a0a14]/70 to-dark/60 backdrop-blur-lg rounded-2xl p-4 md:p-6 border border-gradient1/40 shadow-2xl shadow-gradient1/10">
-          {/* Header with Logo */}
-          <header className="text-center mb-4">
-            <div className="relative inline-block mb-3">
-              <div className="absolute inset-0 bg-gradient1 blur-xl opacity-40 rounded-full" />
-              <img
-                src={logo}
-                alt="Logo"
-                className="relative w-12 md:w-14 h-auto mx-auto drop-shadow-2xl"
-              />
-            </div>
-          </header>
-
+        ref={containerRef}
+        className="relative z-10 w-full max-w-2xl mt-20 md:mt-32"
+      >
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 md:p-6 border border-white/10 shadow-2xl shadow-black/50">
           {/* Progress Bar */}
           <div className="mb-3">
             <div className="flex justify-between items-center mb-1">
@@ -352,9 +359,9 @@ export default function FormSection() {
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="w-full h-1.5 bg-light/10 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-linear-to-r from-gradient1 to-gradient3 transition-all duration-500 ease-out rounded-full"
+                className="h-full bg-white/60 transition-all duration-500 ease-out rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -362,7 +369,7 @@ export default function FormSection() {
 
           {/* Step Title */}
           <div className="text-center mb-5">
-            <h2 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold bg-linear-to-br from-gradient1 via-gradient3 to-gradient1 bg-clip-text text-transparent mb-2 tracking-wider">
+            <h2 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 tracking-wider">
               {currentStepData.title}
             </h2>
             <p className="text-light/70 text-xs font-body">
@@ -503,12 +510,12 @@ export default function FormSection() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-col md:flex-row  gap-3 mt-4">
               {currentStep > 0 && (
                 <button
                   type="button"
                   onClick={handlePrev}
-                  className="flex-1 px-4 py-2.5 bg-light/10 border border-gradient1/40 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 hover:bg-light/15 hover:border-gradient1/60"
+                  className="flex-1 px-4 py-2.5 bg-white/10 border border-white/20 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 hover:bg-white/20 hover:border-white/40"
                 >
                   ← Previous
                 </button>
@@ -519,21 +526,17 @@ export default function FormSection() {
                   type="button"
                   onClick={handleNext}
                   disabled={!canGoNext()}
-                  className="flex-1 px-4 py-2.5 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                  className="flex-1 px-4 py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
-                  <span className="relative z-10">Continue →</span>
-                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  Continue →
                 </button>
               ) : (
                 <button
                   type="submit"
                   disabled={isSubmitting || !canGoNext()}
-                  className="flex-1 px-4 py-2.5 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                  className="flex-1 px-4 py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
-                  <span className="relative z-10">
-                    {isSubmitting ? "Submitting..." : "Submit Application ✓"}
-                  </span>
-                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  {isSubmitting ? "Submitting..." : "Submit Application ✓"}
                 </button>
               )}
             </div>

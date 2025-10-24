@@ -3,7 +3,7 @@ import FormSection from "./components/FormSection";
 function App() {
   return (
     <>
-      <FormSection /> 
+      <FormSection />
     </>
   );
 }
