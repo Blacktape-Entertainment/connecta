@@ -302,7 +302,7 @@ export default function FormSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-[#1a0a14] via-[#0f0515] to-[#150a1f] overflow-hidden px-4 py-8 lg:py-12"
+      className="relative h-screen flex items-center justify-center bg-linear-to-br from-[#1a0a14] via-[#0f0515] to-[#150a1f] overflow-hidden px-3 py-4"
     >
       {/* Animated Gradient Overlays */}
       <div
@@ -328,31 +328,31 @@ export default function FormSection() {
       <div className="absolute bottom-1/3 right-1/3 w-1.5 h-1.5 bg-gradient1 rounded-full animate-pulse delay-150 opacity-70" />
 
       {/* Form Container with Improved Layout */}
-      <div ref={containerRef} className="relative z-10 w-full max-w-4xl">
-        <div className="bg-linear-to-br from-dark/60 via-[#1a0a14]/70 to-dark/60 backdrop-blur-lg rounded-3xl p-8 md:p-12 lg:p-16 border border-gradient1/40 shadow-2xl shadow-gradient1/10">
+      <div ref={containerRef} className="relative z-10 w-full max-w-2xl">
+        <div className="bg-linear-to-br from-dark/60 via-[#1a0a14]/70 to-dark/60 backdrop-blur-lg rounded-2xl p-4 md:p-6 border border-gradient1/40 shadow-2xl shadow-gradient1/10">
           {/* Header with Logo */}
-          <header className="text-center mb-8">
-            <div className="relative inline-block mb-6">
-              <div className="absolute inset-0 bg-gradient1 blur-2xl opacity-40 rounded-full" />
+          <header className="text-center mb-4">
+            <div className="relative inline-block mb-3">
+              <div className="absolute inset-0 bg-gradient1 blur-xl opacity-40 rounded-full" />
               <img
                 src={logo}
                 alt="Logo"
-                className="relative w-20 md:w-24 h-auto mx-auto drop-shadow-2xl"
+                className="relative w-12 md:w-14 h-auto mx-auto drop-shadow-2xl"
               />
             </div>
           </header>
 
           {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-light/60 text-sm font-body">
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-light/60 text-xs font-body">
                 Step {currentStep + 1} of {totalSteps}
               </span>
-              <span className="text-light/60 text-sm font-body">
+              <span className="text-light/60 text-xs font-body">
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="w-full h-2 bg-light/10 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-light/10 rounded-full overflow-hidden">
               <div
                 className="h-full bg-linear-to-r from-gradient1 to-gradient3 transition-all duration-500 ease-out rounded-full"
                 style={{ width: `${progress}%` }}
@@ -361,11 +361,11 @@ export default function FormSection() {
           </div>
 
           {/* Step Title */}
-          <div className="text-center mb-10">
-            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-br from-gradient1 via-gradient3 to-gradient1 bg-clip-text text-transparent mb-3 tracking-wider">
+          <div className="text-center mb-5">
+            <h2 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold bg-linear-to-br from-gradient1 via-gradient3 to-gradient1 bg-clip-text text-transparent mb-2 tracking-wider">
               {currentStepData.title}
             </h2>
-            <p className="text-light/70 text-sm font-body">
+            <p className="text-light/70 text-xs font-body">
               Press Enter to continue ↵
             </p>
           </div>
@@ -374,12 +374,12 @@ export default function FormSection() {
           <form
             onSubmit={handleSubmit}
             onKeyPress={handleKeyPress}
-            className="flex flex-col gap-8"
+            className="flex flex-col gap-4"
             noValidate
           >
             {/* Step 0: First Name & Last Name */}
             {currentStep === 0 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <FormField
                   label="First Name"
                   name="firstName"
@@ -405,7 +405,7 @@ export default function FormSection() {
 
             {/* Step 1: Phone & Birth Date */}
             {currentStep === 1 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <FormField
                   label="Phone Number"
                   name="phoneNumber"
@@ -430,7 +430,7 @@ export default function FormSection() {
 
             {/* Step 2: Education & Area of Interest */}
             {currentStep === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <SelectField
                   label="Education Degree"
                   name="educationDegree"
@@ -503,12 +503,12 @@ export default function FormSection() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-3 mt-4">
               {currentStep > 0 && (
                 <button
                   type="button"
                   onClick={handlePrev}
-                  className="flex-1 px-6 py-4 bg-light/10 border border-gradient1/40 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 hover:bg-light/15 hover:border-gradient1/60"
+                  className="flex-1 px-4 py-2.5 bg-light/10 border border-gradient1/40 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 hover:bg-light/15 hover:border-gradient1/60"
                 >
                   ← Previous
                 </button>
@@ -519,7 +519,7 @@ export default function FormSection() {
                   type="button"
                   onClick={handleNext}
                   disabled={!canGoNext()}
-                  className="flex-1 px-6 py-4 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                  className="flex-1 px-4 py-2.5 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
                 >
                   <span className="relative z-10">Continue →</span>
                   <div className="absolute inset-0 bg-linear-to-r from-transparent via-light/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -528,7 +528,7 @@ export default function FormSection() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !canGoNext()}
-                  className="flex-1 px-6 py-4 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-base font-semibold tracking-wider rounded-xl cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
+                  className="flex-1 px-4 py-2.5 bg-linear-to-br from-gradient1 to-gradient3 text-light font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden group"
                 >
                   <span className="relative z-10">
                     {isSubmitting ? "Submitting..." : "Submit Application ✓"}
