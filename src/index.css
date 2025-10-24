@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: "Orbitron", sans-serif;
+  --font-body: "Poppins", sans-serif;
+
+  /* color palette */
+  --color-gradient1: #791752; /* gradient */
+  --color-gradient2: #131312; /* gradient */
+  --color-gradient3: #370862; /* gradient */
+  --color-dark: #131312; /* black */
+  --color-light: #ffffff; /* white */
+}
+
+@layer base {
+  body {
+    @apply bg-dark text-light font-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-bold tracking-wide;
+  }
+}
