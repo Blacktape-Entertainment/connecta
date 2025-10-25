@@ -9,6 +9,20 @@
 
 ### 2. **Build Configuration**
 
+**IMPORTANT:** Leave the following fields **EMPTY** in Coolify UI to let `nixpacks.toml` handle the configuration:
+- Install Command: *(leave empty)*
+- Build Command: *(leave empty)*
+- Start Command: *(leave empty)*
+
+**Only set this:**
+- **Publish Directory**: `dist`
+- **Base Directory**: `/` (or leave empty for root)
+
+> **Why?** If you manually set install/build commands in Coolify UI, they override the `nixpacks.toml` configuration and can cause detection issues.
+
+#### **Alternative: Manual Configuration**
+If auto-detection doesn't work, set these **WITHOUT** specifying a base directory path:
+
 #### **Install Command:**
 ```bash
 pnpm install --frozen-lockfile
