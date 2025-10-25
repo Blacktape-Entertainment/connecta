@@ -48,6 +48,8 @@ function parseError(error: unknown): {
   fields: Record<string, string>;
   code: number;
 } {
+  console.error("PocketBase error:", { error });
+  
   // Type guard for PocketBase errors
   if (
     error &&
@@ -58,7 +60,7 @@ function parseError(error: unknown): {
     "data" in error.response
   ) {
     const pbError = error as {
-      response: { data: Record<string, { message?: string }> };
+      response: { data: Record<string, { message?: string; code?: string }> };
       status?: number;
     };
 
@@ -66,17 +68,27 @@ function parseError(error: unknown): {
     const fieldErrors: Record<string, string> = {};
     let generalMessage = "Please check your input and try again.";
 
-    // Extract field-specific errors
-    Object.keys(errors).forEach((field) => {
-      if (errors[field]?.message) {
-        fieldErrors[field] = errors[field].message!;
-      }
-    });
+    // Check for phone number uniqueness error specifically
+    if (
+      errors.phoneNumber?.code === "validation_not_unique" ||
+      errors.phoneNumber?.message?.includes("unique")
+    ) {
+      generalMessage =
+        "This phone number is already registered. Please use a different phone number or login to your existing account.";
+      fieldErrors.phoneNumber = "Phone number already exists";
+    } else {
+      // Extract field-specific errors
+      Object.keys(errors).forEach((field) => {
+        if (errors[field]?.message) {
+          fieldErrors[field] = errors[field].message!;
+        }
+      });
 
-    // Get first error message as general message
-    const firstError = Object.values(errors)[0];
-    if (firstError?.message) {
-      generalMessage = firstError.message;
+      // Get first error message as general message
+      const firstError = Object.values(errors)[0];
+      if (firstError?.message) {
+        generalMessage = firstError.message;
+      }
     }
 
     return {

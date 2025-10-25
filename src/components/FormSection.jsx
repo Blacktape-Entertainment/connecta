@@ -5,6 +5,7 @@ import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
 import Orb from "./Orb";
+import { SuccessModal } from "./SuccessModal";
 
 export default function FormSection() {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export default function FormSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [orbHoverState, setOrbHoverState] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Refs for GSAP animations
   const sectionRef = useRef(null);
@@ -327,8 +329,8 @@ export default function FormSection() {
       setErrors({});
       setCurrentStep(0);
 
-      // Show success message (you can replace with a toast or modal)
-      alert("Application submitted successfully!");
+      // Show success modal
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error submitting application:", error);
       alert(error.message || "Failed to submit application. Please try again.");
@@ -565,6 +567,12 @@ export default function FormSection() {
           </form>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={() => setShowSuccessModal(false)} 
+      />
     </section>
   );
 }
