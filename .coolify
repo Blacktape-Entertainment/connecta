@@ -1,0 +1,17 @@
+# Coolify / Nixpacks Configuration for Connecta Static Site
+
+[phases.setup]
+nixPkgs = ["nodejs-20_x", "pnpm"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm run build"]
+
+[start]
+cmd = ""
+
+[staticAssets]
+dir = "dist"
+
