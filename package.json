@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.1.16",
     "gsap": "^3.13.0",
     "ogl": "^1.0.11",
+    "pocketbase": "^0.26.2",
     "react": "^19.1.1",
     "react-bits": "^1.0.5",
     "react-dom": "^19.1.1",

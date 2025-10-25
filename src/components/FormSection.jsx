@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { gsap } from "gsap";
+import { submitApplication } from "../services/applicationService.ts";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
@@ -303,17 +304,14 @@ export default function FormSection() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch("/api/submit-form", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      // Submit application using service layer
+      const result = await submitApplication(formData);
 
-      if (!response.ok) throw new Error("Failed to submit form");
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
 
-      const data = await response.json();
-      console.log("Form submitted successfully:", data);
+      console.log("Application submitted successfully:", result.data);
 
       // Reset form on success
       setFormData({
@@ -332,8 +330,8 @@ export default function FormSection() {
       // Show success message (you can replace with a toast or modal)
       alert("Application submitted successfully!");
     } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to submit application. Please try again.");
+      console.error("Error submitting application:", error);
+      alert(error.message || "Failed to submit application. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
