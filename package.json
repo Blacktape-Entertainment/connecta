@@ -9,12 +9,13 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "packageManager": "pnpm@latest",
+  "packageManager": "pnpm@10.18.2^",
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "gsap": "^3.13.0",
+    "lucide-react": "^0.548.0",
     "ogl": "^1.0.11",
     "pocketbase": "^0.26.2",
     "react": "^19.1.1",
