@@ -28,54 +28,61 @@ export default function FormSection() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
 
-  // Refs for GSAP animations
   const sectionRef = useRef(null);
   const containerRef = useRef(null);
   const logoRef = useRef(null);
   const interactionTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
 
-  // Handle user interaction for orb effect
-  const handleUserInteraction = () => {
-    setOrbHoverState(true);
-    
-    // Clear existing timeout
-    if (interactionTimeoutRef.current) {
-      clearTimeout(interactionTimeoutRef.current);
-    }
-    
-    // Reset hover state after 2 seconds of no interaction
-    interactionTimeoutRef.current = setTimeout(() => {
-      setOrbHoverState(false);
-    }, 3500);
-  };
-
-  // Add global event listeners for mobile interactions
   useEffect(() => {
-    const handleKeyDown = () => handleUserInteraction();
-    const handleTouchStart = () => handleUserInteraction();
-    const handleInput = () => handleUserInteraction();
-    
-    // Add event listeners
-    globalThis.addEventListener('keydown', handleKeyDown);
-    globalThis.addEventListener('touchstart', handleTouchStart);
-    globalThis.addEventListener('input', handleInput);
-    
     return () => {
-      globalThis.removeEventListener('keydown', handleKeyDown);
-      globalThis.removeEventListener('touchstart', handleTouchStart);
-      globalThis.removeEventListener('input', handleInput);
-      
-      // Clear timeout on unmount
-      if (interactionTimeoutRef.current) {
+      isMountedRef.current = false;
+      if (interactionTimeoutRef.current)
         clearTimeout(interactionTimeoutRef.current);
-      }
     };
   }, []);
 
-  // GSAP Animations
+  const handleUserInteraction = () => {
+    setOrbHoverState(true);
+    if (interactionTimeoutRef.current)
+      clearTimeout(interactionTimeoutRef.current);
+    interactionTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) setOrbHoverState(false);
+    }, 3500);
+  };
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const handleKeyDown = (e) => {
+      // only treat keyboard interactions (non-modifier)
+      if ((e.key && e.key.length === 1) || e.key === "Enter" || e.key === " ") {
+        handleUserInteraction();
+      }
+    };
+    const handleTouchStart = () => handleUserInteraction();
+    const handleInput = () => handleUserInteraction();
+
+    // ensure section can receive keyboard events
+    if (!section.hasAttribute("tabindex"))
+      section.setAttribute("tabindex", "0");
+
+    section.addEventListener("keydown", handleKeyDown);
+    section.addEventListener("touchstart", handleTouchStart, { passive: true });
+    section.addEventListener("input", handleInput);
+
+    return () => {
+      section.removeEventListener("keydown", handleKeyDown);
+      section.removeEventListener("touchstart", handleTouchStart);
+      section.removeEventListener("input", handleInput);
+      if (interactionTimeoutRef.current)
+        clearTimeout(interactionTimeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Logo animation - entrance effect
       gsap.from(logoRef.current, {
         scale: 0.8,
         opacity: 0,
@@ -85,7 +92,6 @@ export default function FormSection() {
         delay: 0.2,
       });
 
-      // Logo continuous subtle floating animation
       gsap.to(logoRef.current, {
         y: -15,
         duration: 4,
@@ -95,7 +101,6 @@ export default function FormSection() {
         delay: 1.5,
       });
 
-      // Container animation - entrance effect
       gsap.from(containerRef.current, {
         scale: 0.95,
         opacity: 0,
@@ -105,7 +110,6 @@ export default function FormSection() {
         delay: 0.5,
       });
 
-      // Continuous subtle floating animation for the container
       gsap.to(containerRef.current, {
         y: -10,
         duration: 3,
@@ -119,62 +123,54 @@ export default function FormSection() {
     return () => ctx.revert();
   }, []);
 
-  // Validation rules
   const validateField = (name, value) => {
     switch (name) {
       case "firstName":
       case "lastName": {
-        if (!value.trim())
+        if (!value || !value.toString().trim())
           return `${name === "firstName" ? "First" : "Last"} name is required`;
-        if (value.trim().length < 2) return "Must be at least 2 characters";
+        if (value.toString().trim().length < 2)
+          return "Must be at least 2 characters";
         if (!/^[a-zA-Z\s-']+$/.test(value))
           return "Only letters, spaces, hyphens and apostrophes allowed";
         return "";
       }
-
       case "phoneNumber": {
-        if (!value.trim()) return "Phone number is required";
-
-        // Use comprehensive international phone validation
+        if (!value || !value.toString().trim())
+          return "Phone number is required";
         const validationResult = validatePhoneNumber(value);
-        
-        if (!validationResult.isValid) {
+        if (!validationResult.isValid)
           return validationResult.reason || "Invalid phone number";
-        }
-
         return "";
       }
-
       case "birthDate": {
         if (!value) return "Birth date is required";
         const birthDate = new Date(value);
+        if (isNaN(birthDate.getTime())) return "Invalid date";
         const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
         if (age < 7 || age > 80) return "Age must be between 7 and 80";
         return "";
       }
-
       case "educationDegree":
         if (!value) return "Please select your education degree";
         return "";
-
       case "areaOfInterest":
         if (!value) return "Please select your area of interest";
         return "";
-
       case "favoriteGame":
         if (formData.areaOfInterest === "gaming" && !value)
           return "Please select your favorite game";
         return "";
-
       default:
         return "";
     }
   };
 
-  // Define form steps
   const steps = useMemo(() => {
-    const baseSteps = [
+    const base = [
       {
         title: "Let's start with your name",
         fields: ["firstName", "lastName"],
@@ -191,45 +187,59 @@ export default function FormSection() {
             : ["educationDegree", "areaOfInterest"],
       },
     ];
-
-    return baseSteps;
+    return base;
   }, [formData.areaOfInterest]);
 
   const totalSteps = steps.length;
-  const currentStepData = steps[currentStep];
+  useEffect(() => {
+    if (currentStep >= totalSteps) {
+      setCurrentStep(Math.max(0, totalSteps - 1));
+    }
+  }, [totalSteps, currentStep]);
+
+  const currentStepData = steps[currentStep] || steps[0];
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
-  const canGoNext = () => {
-    return currentStepData.fields.every((field) => {
-      const value = formData[field];
-      const error = validateField(field, value);
-      return value && !error;
+  const canGoNext = () =>
+    currentStepData.fields.every(
+      (f) => formData[f] && !validateField(f, formData[f])
+    );
+
+  // live-validate fields that are touched
+  useEffect(() => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      Object.keys(touched).forEach((k) => {
+        if (touched[k]) {
+          const err = validateField(k, formData[k]);
+          if (err) next[k] = err;
+          else if (k in next) delete next[k];
+        }
+      });
+      return next;
     });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, touched]);
 
   const handleNext = () => {
-    // Validate current step fields
     const stepErrors = {};
-    currentStepData.fields.forEach((field) => {
-      const error = validateField(field, formData[field]);
-      if (error) stepErrors[field] = error;
+    currentStepData.fields.forEach((f) => {
+      const err = validateField(f, formData[f]);
+      if (err) stepErrors[f] = err;
     });
 
     if (Object.keys(stepErrors).length > 0) {
-      setErrors((prev) => ({ ...prev, ...stepErrors }));
-      setTouched((prev) => {
-        const newTouched = { ...prev };
-        currentStepData.fields.forEach((field) => {
-          newTouched[field] = true;
-        });
-        return newTouched;
-      });
+      setErrors((p) => ({ ...p, ...stepErrors }));
+      setTouched((p) => ({
+        ...p,
+        ...Object.fromEntries(currentStepData.fields.map((f) => [f, true])),
+      }));
       return;
     }
 
     if (currentStep < totalSteps - 1) {
-      setCurrentStep((prev) => prev + 1);
-      // Animate to next step
+      gsap.killTweensOf(containerRef.current);
+      setCurrentStep((p) => p + 1);
       gsap.fromTo(
         containerRef.current,
         { x: 50, opacity: 0 },
@@ -240,8 +250,18 @@ export default function FormSection() {
 
   const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
-      // Animate to previous step
+      // clear touched for the step we're leaving so errors don't linger
+      const leavingFields = currentStepData.fields;
+      setTouched((prev) => {
+        const next = { ...prev };
+        leavingFields.forEach((f) => {
+          if (f in next) next[f] = false;
+        });
+        return next;
+      });
+
+      gsap.killTweensOf(containerRef.current);
+      setCurrentStep((p) => p - 1);
       gsap.fromTo(
         containerRef.current,
         { x: -50, opacity: 0 },
@@ -252,43 +272,45 @@ export default function FormSection() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear favorite game if user changes away from gaming
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "areaOfInterest" && value !== "gaming") {
+        next.favoriteGame = "";
+      }
+      return next;
+    });
+
     if (name === "areaOfInterest" && value !== "gaming") {
-      setFormData((prev) => ({ ...prev, favoriteGame: "" }));
-      setErrors((prev) => ({ ...prev, favoriteGame: "" }));
-      setTouched((prev) => ({ ...prev, favoriteGame: false }));
+      setErrors((p) => ({ ...p, favoriteGame: "" }));
+      setTouched((p) => ({ ...p, favoriteGame: false }));
     }
 
-    // Validate field on change if already touched
     if (touched[name]) {
-      setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+      setErrors((p) => ({ ...p, [name]: validateField(name, value) }));
     }
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setTouched((p) => ({ ...p, [name]: true }));
+    setErrors((p) => ({ ...p, [name]: validateField(name, value) }));
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (currentStep < totalSteps - 1 && canGoNext()) {
-        handleNext();
-      } else if (currentStep === totalSteps - 1 && canGoNext()) {
-        handleSubmit(e);
-      }
+      if (isSubmitting) return;
+      if (currentStep < totalSteps - 1 && canGoNext()) handleNext();
+      else if (currentStep === totalSteps - 1 && canGoNext()) handleSubmit(e);
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    Object.keys(formData).forEach((key) => {
-      const error = validateField(key, formData[key]);
-      if (error) newErrors[key] = error;
+    Object.keys(formData).forEach((k) => {
+      const err = validateField(k, formData[k]);
+      if (err) newErrors[k] = err;
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -296,30 +318,17 @@ export default function FormSection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
-    // Mark all fields as touched
-    const allTouched = Object.keys(formData).reduce(
-      (acc, key) => ({ ...acc, [key]: true }),
-      {}
-    );
-    setTouched(allTouched);
-
-    // Validate form
+    setTouched(Object.fromEntries(Object.keys(formData).map((k) => [k, true])));
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-
     try {
-      // Submit application using service layer
       const result = await submitApplication(formData);
+      if (!result.success)
+        throw new Error(result.error?.message || "Submission failed");
 
-      if (!result.success) {
-        throw new Error(result.error.message);
-      }
-
-      console.log("Application submitted successfully:", result.data);
-
-      // Reset form on success
       setFormData({
         firstName: "",
         lastName: "",
@@ -332,33 +341,33 @@ export default function FormSection() {
       setTouched({});
       setErrors({});
       setCurrentStep(0);
-
-      // Show success modal
+      setOrbHoverState(false);
       setShowSuccessModal(true);
     } catch (error) {
-      console.error("Error submitting application:", error);
       setErrorModal({
         isOpen: true,
-        message: error.message || "Failed to submit application. Please try again."
+        message:
+          error?.message || "Failed to submit application. Please try again.",
       });
     } finally {
-      setIsSubmitting(false);
+      if (isMountedRef.current) setIsSubmitting(false);
     }
   };
 
   return (
     <section
       ref={sectionRef}
+      tabIndex={0}
       className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-6 md:px-6 md:py-8"
+      onKeyDown={handleKeyDown}
     >
-      {/* Orb Background */}
       <div className="fixed inset-0 z-0 flex items-center justify-center">
-        <div 
-          style={{ 
-            width: "100%", 
-            height: "100%", 
-            maxWidth: "800px", 
-            maxHeight: "800px"
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            maxWidth: "800px",
+            maxHeight: "800px",
           }}
         >
           <Orb
@@ -369,8 +378,11 @@ export default function FormSection() {
           />
         </div>
       </div>
-      {/* Logo - Outside Container */}
-      <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center">
+
+      <div
+        ref={logoRef}
+        className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center"
+      >
         <img
           src={logo}
           alt="Logo"
@@ -378,13 +390,11 @@ export default function FormSection() {
         />
       </div>
 
-      {/* Form Container with Glass Effect */}
       <div
         ref={containerRef}
         className="relative z-10 w-full max-w-2xl mt-24 md:mt-32 px-2 md:px-0"
       >
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 md:p-8 border border-white/10 shadow-2xl shadow-black/50">
-          {/* Progress Bar */}
           <div className="mb-4 md:mb-3">
             <div className="flex justify-between items-center mb-1">
               <span className="text-light/60 text-xs font-body">
@@ -402,7 +412,6 @@ export default function FormSection() {
             </div>
           </div>
 
-          {/* Step Title */}
           <div className="text-center mb-5 md:mb-6">
             <h2 className="font-heading text-lg md:text-2xl lg:text-3xl font-bold text-white mb-2 tracking-wider px-2">
               {currentStepData.title}
@@ -412,14 +421,11 @@ export default function FormSection() {
             </p>
           </div>
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
-            onKeyPress={handleKeyPress}
             className="flex flex-col gap-4 md:gap-5"
             noValidate
           >
-            {/* Step 0: First Name & Last Name */}
             {currentStep === 0 && (
               <div className="space-y-4 md:space-y-5">
                 <FormField
@@ -445,7 +451,6 @@ export default function FormSection() {
               </div>
             )}
 
-            {/* Step 1: Phone & Birth Date */}
             {currentStep === 1 && (
               <div className="space-y-4 md:space-y-5">
                 <FormField
@@ -470,7 +475,6 @@ export default function FormSection() {
               </div>
             )}
 
-            {/* Step 2: Education & Area of Interest */}
             {currentStep === 2 && (
               <div className="space-y-4 md:space-y-5">
                 <SelectField
@@ -510,7 +514,6 @@ export default function FormSection() {
                   ]}
                 />
 
-                {/* Favorite Game - Conditionally shown when gaming is selected */}
                 {formData.areaOfInterest === "gaming" && (
                   <SelectField
                     label="What's your favorite game?"
@@ -532,7 +535,10 @@ export default function FormSection() {
                       { value: "pubg-mobile", label: "PUBG Mobile" },
                       { value: "mobile-legends", label: "Mobile Legends" },
                       { value: "clash-royale", label: "Clash Royale" },
-                      { value: "retro-games", label: "Retro Games (Arcade Games)" },
+                      {
+                        value: "retro-games",
+                        label: "Retro Games (Arcade Games)",
+                      },
                       { value: "other", label: "Other" },
                     ]}
                   />
@@ -540,7 +546,6 @@ export default function FormSection() {
               </div>
             )}
 
-            {/* Navigation Buttons */}
             <div className="flex flex-col md:flex-row gap-3 mt-5 md:mt-6">
               {currentStep > 0 && (
                 <button
@@ -567,7 +572,7 @@ export default function FormSection() {
                   disabled={isSubmitting || !canGoNext()}
                   className="flex-1 px-5 py-3 md:px-4 md:py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Application ✓"}
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </button>
               )}
             </div>
@@ -575,18 +580,16 @@ export default function FormSection() {
         </div>
       </div>
 
-      {/* Success Modal */}
-      <SuccessModal 
-        isOpen={showSuccessModal} 
-        onClose={() => setShowSuccessModal(false)} 
-      />
-
-      {/* Error Modal */}
-      <ErrorModal
-        isOpen={errorModal.isOpen}
-        onClose={() => setErrorModal({ isOpen: false, message: "" })}
-        message={errorModal.message}
-      />
+      {showSuccessModal && (
+        <SuccessModal onClose={() => setShowSuccessModal(false)} />
+      )}
+      {errorModal.isOpen && (
+        <ErrorModal
+          isOpen={errorModal.isOpen}
+          message={errorModal.message}
+          onClose={() => setErrorModal({ isOpen: false, message: "" })}
+        />
+      )}
     </section>
   );
 }

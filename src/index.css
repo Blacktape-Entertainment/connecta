@@ -4,11 +4,11 @@
   --font-heading: "Orbitron", sans-serif;
   --font-body: "Poppins", sans-serif;
 
-  /* color palette */
-  --color-gradient1: #791752; /* gradient */
-  --color-gradient2: #131312; /* gradient */
-  --color-gradient3: #370862; /* gradient */
-  --color-dark: #131312; /* black */
+  /* clearer gradient palette */
+  --color-gradient1: #c41e78; /* brighter magenta-pink */
+  --color-gradient2: #1b0b25; /* deep violet-black */
+  --color-gradient3: #5b1fa2; /* vibrant royal purple */
+  --color-dark: #0d0d0d; /* pure deep black */
   --color-light: #ffffff; /* white */
 }
 
