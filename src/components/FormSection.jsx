@@ -143,7 +143,7 @@ export default function FormSection() {
         const birthDate = new Date(value);
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
-        if (age < 16 || age > 100) return "Age must be between 16 and 100";
+        if (age < 7 || age > 80) return "Age must be between 7 and 80";
         return "";
       }
 
@@ -342,7 +342,7 @@ export default function FormSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-screen flex items-center justify-center overflow-hidden px-3 py-4"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-6 md:px-6 md:py-8"
     >
       {/* Orb Background */}
       <div className="fixed inset-0 z-0 flex items-center justify-center">
@@ -357,28 +357,28 @@ export default function FormSection() {
           <Orb
             hoverIntensity={1.1}
             rotateOnHover={true}
-            hue={0}
+            hue={259}
             forceHoverState={orbHoverState}
           />
         </div>
       </div>
       {/* Logo - Outside Container */}
-      <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center">
+      <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 z-20 flex justify-center items-center">
         <img
           src={logo}
           alt="Logo"
-          className="w-25 md:w-30 h-auto drop-shadow-2xl mx-auto"
+          className="w-20 h-auto md:w-25 lg:w-30 drop-shadow-2xl mx-auto"
         />
       </div>
 
       {/* Form Container with Glass Effect */}
       <div
         ref={containerRef}
-        className="relative z-10 w-full max-w-2xl mt-20 md:mt-32"
+        className="relative z-10 w-full max-w-2xl mt-24 md:mt-32 px-2 md:px-0"
       >
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 md:p-6 border border-white/10 shadow-2xl shadow-black/50">
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 md:p-8 border border-white/10 shadow-2xl shadow-black/50">
           {/* Progress Bar */}
-          <div className="mb-3">
+          <div className="mb-4 md:mb-3">
             <div className="flex justify-between items-center mb-1">
               <span className="text-light/60 text-xs font-body">
                 Step {currentStep + 1} of {totalSteps}
@@ -396,11 +396,11 @@ export default function FormSection() {
           </div>
 
           {/* Step Title */}
-          <div className="text-center mb-5">
-            <h2 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 tracking-wider">
+          <div className="text-center mb-5 md:mb-6">
+            <h2 className="font-heading text-lg md:text-2xl lg:text-3xl font-bold text-white mb-2 tracking-wider px-2">
               {currentStepData.title}
             </h2>
-            <p className="text-light/70 text-xs font-body">
+            <p className="text-light/70 text-xs md:text-sm font-body">
               Press Enter to continue ↵
             </p>
           </div>
@@ -409,12 +409,12 @@ export default function FormSection() {
           <form
             onSubmit={handleSubmit}
             onKeyPress={handleKeyPress}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4 md:gap-5"
             noValidate
           >
             {/* Step 0: First Name & Last Name */}
             {currentStep === 0 && (
-              <div className="space-y-4">
+              <div className="space-y-4 md:space-y-5">
                 <FormField
                   label="First Name"
                   name="firstName"
@@ -440,7 +440,7 @@ export default function FormSection() {
 
             {/* Step 1: Phone & Birth Date */}
             {currentStep === 1 && (
-              <div className="space-y-4">
+              <div className="space-y-4 md:space-y-5">
                 <FormField
                   label="Phone Number"
                   name="phoneNumber"
@@ -465,7 +465,7 @@ export default function FormSection() {
 
             {/* Step 2: Education & Area of Interest */}
             {currentStep === 2 && (
-              <div className="space-y-4">
+              <div className="space-y-4 md:space-y-5">
                 <SelectField
                   label="Education Degree"
                   name="educationDegree"
@@ -519,17 +519,13 @@ export default function FormSection() {
                         value: "league-of-legends",
                         label: "League of Legends",
                       },
-                      { value: "counter-strike", label: "Counter-Strike" },
-                      { value: "dota2", label: "Dota 2" },
                       { value: "fortnite", label: "Fortnite" },
-                      { value: "apex-legends", label: "Apex Legends" },
-                      { value: "overwatch", label: "Overwatch" },
-                      { value: "minecraft", label: "Minecraft" },
-                      { value: "gta5", label: "GTA V" },
-                      { value: "fifa", label: "FIFA" },
-                      { value: "cod", label: "Call of Duty" },
-                      { value: "pubg", label: "PUBG" },
-                      { value: "rocket-league", label: "Rocket League" },
+                      { value: "fc26", label: "FC26" },
+                      { value: "tekken8", label: "Tekken 8" },
+                      { value: "pubg-mobile", label: "PUBG Mobile" },
+                      { value: "mobile-legends", label: "Mobile Legends" },
+                      { value: "clash-royale", label: "Clash Royale" },
+                      { value: "retro-games", label: "Retro Games (Arcade Games)" },
                       { value: "other", label: "Other" },
                     ]}
                   />
@@ -538,12 +534,12 @@ export default function FormSection() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col md:flex-row  gap-3 mt-4">
+            <div className="flex flex-col md:flex-row gap-3 mt-5 md:mt-6">
               {currentStep > 0 && (
                 <button
                   type="button"
                   onClick={handlePrev}
-                  className="flex-1 px-4 py-2.5 bg-white/10 border border-white/20 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 hover:bg-white/20 hover:border-white/40"
+                  className="flex-1 px-5 py-3 md:px-4 md:py-2.5 bg-white/10 border border-white/20 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 hover:bg-white/20 hover:border-white/40"
                 >
                   ← Previous
                 </button>
@@ -554,7 +550,7 @@ export default function FormSection() {
                   type="button"
                   onClick={handleNext}
                   disabled={!canGoNext()}
-                  className="flex-1 px-4 py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="flex-1 px-5 py-3 md:px-4 md:py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   Continue →
                 </button>
@@ -562,7 +558,7 @@ export default function FormSection() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !canGoNext()}
-                  className="flex-1 px-4 py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="flex-1 px-5 py-3 md:px-4 md:py-2.5 bg-white/20 border border-white/30 text-white font-heading text-sm font-semibold tracking-wider rounded-lg cursor-pointer transition-all duration-300 shadow-lg hover:-translate-y-0.5 hover:shadow-xl hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Application ✓"}
                 </button>
