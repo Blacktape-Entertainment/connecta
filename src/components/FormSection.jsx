@@ -7,6 +7,7 @@ import SelectField from "./SelectField";
 import Orb from "./Orb";
 import { SuccessModal } from "./SuccessModal";
 import ErrorModal from "./ErrorModal";
+import { validatePhoneNumber } from "../lib/phone-validator";
 
 export default function FormSection() {
   const [formData, setFormData] = useState({
@@ -134,11 +135,12 @@ export default function FormSection() {
       case "phoneNumber": {
         if (!value.trim()) return "Phone number is required";
 
-        // Egyptian phone numbers: +20 / 0020 / 0 followed by 10,11,12,15 then 8 digits
-        const egyptianPhoneRegex = /^(?:\+20|0020|0)?1[0,1,2,5][0-9]{8}$/;
-
-        if (!egyptianPhoneRegex.test(value.replace(/\s|-/g, "")))
-          return "Please enter a valid Egyptian phone number";
+        // Use comprehensive international phone validation
+        const validationResult = validatePhoneNumber(value);
+        
+        if (!validationResult.isValid) {
+          return validationResult.reason || "Invalid phone number";
+        }
 
         return "";
       }
