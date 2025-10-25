@@ -2,7 +2,7 @@
 # Static site deployment configuration
 
 [phases.setup]
-nixPkgs = ["nodejs-20_x", "pnpm"]
+nixPkgs = ["nodejs_20", "pnpm"]
 
 [phases.install]
 cmds = ["pnpm install --frozen-lockfile"]
