@@ -86,14 +86,14 @@ const AdminDashboard = () => {
     : 0;
 
   /* 🔹 Stats Calculations */
-  const newUsersThisMonth = useMemo(() => {
+  const newUsersThisWeek = useMemo(() => {
     const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    
     return users.filter((u) => {
       const created = new Date(u.created);
-      return (
-        created.getMonth() === now.getMonth() &&
-        created.getFullYear() === now.getFullYear()
-      );
+      return created >= sevenDaysAgo;
     }).length;
   }, [users]);
 
@@ -213,8 +213,8 @@ const AdminDashboard = () => {
           icon={<CheckCircle />}
         />
         <MetricCard
-          title="New This Month"
-          value={newUsersThisMonth}
+          title="New This Week"
+          value={newUsersThisWeek}
           icon={<UserPlus />}
         />
         <MetricCard
