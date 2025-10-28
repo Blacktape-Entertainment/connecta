@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { gsap } from "gsap";
-import { submitApplication } from "../services/applicationService.ts";
+import pb from "../lib/pocketbase";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
@@ -11,7 +11,7 @@ import { SuccessModal } from "./SuccessModal";
 import ErrorModal from "./ErrorModal";
 import { validatePhoneNumber } from "../lib/phone-validator";
 
-export default function FormSection() {
+export default function TournamentFormSection() {
   /* =========================
    * 🎯 STATE MANAGEMENT
    * ========================= */
@@ -21,7 +21,7 @@ export default function FormSection() {
     phoneNumber: "",
     birthDate: "",
     educationDegree: "",
-    areaOfInterest: "",
+    areaOfInterest: "gaming", // Fixed to gaming
     favoriteGame: [], // Changed to array for multiple games
     schoolName: "", // New field for school/university name
   });
@@ -32,6 +32,9 @@ export default function FormSection() {
   const [orbHoverState, setOrbHoverState] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
+  const [existingUser, setExistingUser] = useState(null);
+  const [tournamentsToRegister, setTournamentsToRegister] = useState([]);
+  const [isReturningUser, setIsReturningUser] = useState(null); // null = not selected, true = returning, false = new
 
   /* =========================
    * 🌀 REFS
@@ -161,23 +164,13 @@ export default function FormSection() {
       }
 
       case "educationDegree":
-      case "areaOfInterest":
-        return value
-          ? ""
-          : `Please select your ${
-              name === "educationDegree"
-                ? "education degree"
-                : "area of interest"
-            }`;
+        return value ? "" : "Please select your education degree";
 
       case "favoriteGame":
-        // If gaming is selected, require at least one game
-        if (formData.areaOfInterest === "gaming") {
-          return Array.isArray(value) && value.length > 0
-            ? ""
-            : "Please select at least one favorite game";
-        }
-        return "";
+        // For tournament registration, require at least one game
+        return Array.isArray(value) && value.length > 0
+          ? ""
+          : "Please select at least one favorite game";
 
       case "schoolName":
         // Required only if conditions are met
@@ -197,8 +190,47 @@ export default function FormSection() {
   /* =========================
    * 🧮 HELPER FUNCTIONS
    * ========================= */
+  // Sanitize phone number - remove all non-digit characters
+  const sanitizePhoneNumber = (phoneNumber) => {
+    return phoneNumber.replace(/\D/g, ""); // Remove +, spaces, dashes, etc.
+  };
+
+  // Check phone number for existing user
+  const checkPhoneNumber = async (phoneNumber) => {
+    if (!phoneNumber || phoneNumber.length < 10) return;
+    
+    const sanitized = sanitizePhoneNumber(phoneNumber);
+    
+    try {
+      console.log("Checking phone number:", sanitized);
+      const records = await pb.collection("users").getFullList({
+        filter: `phoneNumber = "${sanitized}"`,
+      });
+      console.log("Phone check records:", records);
+      
+      if (records && records.length > 0) {
+        // User exists - set existingUser to trigger tournament selection view
+        setExistingUser(records[0]);
+        // No need to change step - we're already at step 1, 
+        // and the useMemo will recalculate steps to show tournament selection
+      } else {
+        // User not found
+        setExistingUser(null);
+        if (isReturningUser) {
+          setErrorModal({
+            isOpen: true,
+            message: "No account found with this phone number. Please register as a new user.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check phone number:", error);
+      setExistingUser(null);
+    }
+  };
+
   // Calculate user age from birth date
-  const calculateAge = () => {
+  const calculateAge = useCallback(() => {
     if (!formData.birthDate) return null;
     const birth = new Date(formData.birthDate);
     if (isNaN(birth.getTime())) return null;
@@ -209,39 +241,59 @@ export default function FormSection() {
       age--;
     }
     return age;
-  };
+  }, [formData.birthDate]);
 
   // Check if school field should be displayed
-  const shouldShowSchoolField = () => {
+  const shouldShowSchoolField = useCallback(() => {
     const age = calculateAge();
     const isEligibleEducation =
       formData.educationDegree === "high-school" ||
       formData.educationDegree === "bachelor";
     return isEligibleEducation && age !== null && age < 27;
-  };
+  }, [formData.educationDegree, calculateAge]);
 
   /* =========================
    * 🪄 STEPS CONFIGURATION
    * ========================= */
   const steps = useMemo(
     () => {
+      // Step 0: Always ask if returning user
+      if (isReturningUser === null) {
+        return [
+          {
+            title: "Have you registered with us before?",
+            fields: [], // No fields, just a choice
+          },
+        ];
+      }
+
+      // If returning user, show phone number then tournament selection
+      if (isReturningUser) {
+        return [
+          { title: "Have you registered with us before?", fields: [] },
+          {
+            title: existingUser ? `Welcome back, ${existingUser.name}!` : "Enter your phone number",
+            fields: ["phoneNumber"],
+          },
+          {
+            title: "Select Tournaments",
+            fields: ["favoriteGame"],
+          },
+        ];
+      }
+      
+      // New user - show full form
       const showSchool = shouldShowSchoolField();
       const baseFields = ["educationDegree"];
       
-      // Add schoolName if conditions are met
       if (showSchool) {
         baseFields.push("schoolName");
       }
       
-      // Add areaOfInterest
-      baseFields.push("areaOfInterest");
-      
-      // Add favoriteGame if gaming is selected
-      if (formData.areaOfInterest === "gaming") {
-        baseFields.push("favoriteGame");
-      }
+      baseFields.push("favoriteGame");
 
       return [
+        { title: "Have you registered with us before?", fields: [] },
         {
           title: "Let's start with your name",
           fields: ["firstName", "lastName"],
@@ -256,7 +308,7 @@ export default function FormSection() {
         },
       ];
     },
-    [formData.areaOfInterest, formData.educationDegree, formData.birthDate]
+    [existingUser, isReturningUser, shouldShowSchoolField]
   );
 
   const totalSteps = steps.length;
@@ -267,8 +319,8 @@ export default function FormSection() {
     currentStepData.fields.every(
       (f) => {
         const fieldValue = formData[f];
-        // Special handling for favoriteGame array when gaming is selected
-        if (f === "favoriteGame" && formData.areaOfInterest === "gaming") {
+        // Special handling for favoriteGame array
+        if (f === "favoriteGame") {
           return Array.isArray(fieldValue) && fieldValue.length > 0;
         }
         // Special handling for schoolName - only required if should be shown
@@ -288,9 +340,9 @@ export default function FormSection() {
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
       
-      // Reset favoriteGame when not gaming
-      if (name === "areaOfInterest" && value !== "gaming") {
-        next.favoriteGame = [];
+      // If changing favoriteGame, update tournamentsToRegister
+      if (name === "favoriteGame") {
+        setTournamentsToRegister(value); // value is already an array from MultiSelectField
       }
       
       // Reset schoolName if conditions no longer met
@@ -329,9 +381,14 @@ export default function FormSection() {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    
+    // Check if user exists when phone number is entered
+    if (name === "phoneNumber" && value && !errors.phoneNumber) {
+      checkPhoneNumber(value);
+    }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const stepErrors = {};
     currentStepData.fields.forEach((f) => {
       const err = validateField(f, formData[f]);
@@ -347,6 +404,41 @@ export default function FormSection() {
       return;
     }
 
+    // For returning users at step 1 (phone entry), check phone before advancing
+    if (isReturningUser && currentStep === 1 && !existingUser) {
+      const sanitized = sanitizePhoneNumber(formData.phoneNumber);
+      
+      try {
+        const records = await pb.collection("users").getFullList({
+          filter: `phoneNumber = "${sanitized}"`,
+        });
+        
+        if (records && records.length > 0) {
+          // User exists - set existingUser and advance to tournament selection
+          setExistingUser(records[0]);
+          gsap.fromTo(
+            containerRef.current,
+            { x: 50, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
+          );
+          setCurrentStep((p) => Math.min(p + 1, totalSteps - 1));
+        } else {
+          // User not found - show error
+          setErrorModal({
+            isOpen: true,
+            message: "No account found with this phone number. Please register as a new user.",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to check phone number:", error);
+        setErrorModal({
+          isOpen: true,
+          message: "Failed to verify phone number. Please try again.",
+        });
+      }
+      return;
+    }
+
     gsap.fromTo(
       containerRef.current,
       { x: 50, opacity: 0 },
@@ -357,6 +449,18 @@ export default function FormSection() {
 
   const handlePrev = () => {
     if (currentStep === 0) return;
+    
+    // Reset isReturningUser when going back to step 0
+    if (currentStep === 1) {
+      setIsReturningUser(null);
+      setExistingUser(null);
+    }
+    
+    // Reset existingUser when going back from tournament selection to phone entry
+    if (isReturningUser && currentStep === 2) {
+      setExistingUser(null);
+    }
+    
     gsap.fromTo(
       containerRef.current,
       { x: -50, opacity: 0 },
@@ -378,15 +482,35 @@ export default function FormSection() {
 
     setIsSubmitting(true);
     try {
-      // Keep favoriteGame as array - PocketBase now expects array format
-      const submissionData = {
-        ...formData,
-        favoriteGame: formData.favoriteGame, // Send as array, not string
-      };
-
-      const result = await submitApplication(submissionData);
-      if (!result.success)
-        throw new Error(result.error?.message || "Submission failed");
+      let result;
+      
+      // If existing user, only update tournaments_interested_in
+      if (existingUser) {
+        const submissionData = {
+          tourments_interested_in: tournamentsToRegister, // Keep as array
+        };
+        result = await pb.collection("users").update(existingUser.id, submissionData);
+        
+        if (!result) throw new Error("Failed to update tournament registration");
+      } else {
+        // New user - send full data with sanitized phone number
+        const sanitizedPhone = sanitizePhoneNumber(formData.phoneNumber);
+        const submissionData = {
+          name: `${formData.firstName} ${formData.lastName}`,
+          phoneNumber: sanitizedPhone, // Save sanitized phone number
+          birthDate: formData.birthDate,
+          educationDegree: formData.educationDegree,
+          areaOfInterest: formData.areaOfInterest,
+          favoriteGame: tournamentsToRegister, // Send as array, not string
+          tourments_interested_in: tournamentsToRegister, // Same games
+          schoolName: formData.schoolName || null,
+          password: sanitizedPhone + "TempPassword123!",
+          passwordConfirm: sanitizedPhone + "TempPassword123!",
+        };
+        
+        result = await pb.collection("users").create(submissionData);
+        if (!result) throw new Error("Submission failed");
+      }
 
       // reset form
       setFormData({
@@ -395,15 +519,19 @@ export default function FormSection() {
         phoneNumber: "",
         birthDate: "",
         educationDegree: "",
-        areaOfInterest: "",
+        areaOfInterest: "gaming",
         favoriteGame: [],
         schoolName: "",
       });
       setErrors({});
       setTouched({});
       setCurrentStep(0);
+      setExistingUser(null);
+      setTournamentsToRegister([]);
+      setIsReturningUser(null);
       setShowSuccessModal(true);
     } catch (err) {
+      console.error("Submission error:", err);
       setErrorModal({
         isOpen: true,
         message:
@@ -450,6 +578,14 @@ export default function FormSection() {
         className="relative z-10 w-full max-w-2xl mt-28 md:mt-32"
       >
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl shadow-black/50">
+          {/* Tournament Badge */}
+          <div className="flex justify-center mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-sm font-semibold text-white">
+              <span className="text-lg">🎮</span>
+              Tournament Registration
+            </span>
+          </div>
+
           {/* Progress Bar */}
           <div className="mb-4">
             <div className="flex justify-between text-xs text-light/60">
@@ -471,13 +607,64 @@ export default function FormSection() {
             {currentStepData.title}
           </h2>
 
+          {/* Existing user indicator */}
+          {existingUser && (
+            <div className="bg-green-500/20 border border-green-500/30 rounded-lg px-4 py-3 text-center mb-4">
+              <p className="text-green-300 text-sm font-medium">
+                ✓ Account found! Please select the tournaments you'd like to register for.
+              </p>
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             noValidate
             className="flex flex-col gap-5"
           >
-            {/* Step fields */}
-            {currentStep === 0 && (
+            {/* Step 0: Returning User Question */}
+            {currentStep === 0 && isReturningUser === null && (
+              <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReturningUser(true);
+                    setCurrentStep(1);
+                  }}
+                  className="w-full px-6 py-4 bg-white/20 border-2 border-white/30 text-white rounded-lg font-semibold hover:bg-white/30 hover:border-white/40 transition-all text-lg"
+                >
+                  ✓ Yes, I have an account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReturningUser(false);
+                    setCurrentStep(1);
+                  }}
+                  className="w-full px-6 py-4 bg-white/10 border-2 border-white/20 text-white rounded-lg font-semibold hover:bg-white/20 hover:border-white/30 transition-all text-lg"
+                >
+                  ✗ No, I'm new here
+                </button>
+              </div>
+            )}
+
+            {/* Step 1 for Returning User: Phone Number */}
+            {isReturningUser && !existingUser && currentStep === 1 && (
+              <FormField
+                {...{
+                  label: "Phone Number",
+                  name: "phoneNumber",
+                  type: "tel",
+                  value: formData.phoneNumber,
+                  onChange: handleChange,
+                  onBlur: handleBlur,
+                  error: touched.phoneNumber && errors.phoneNumber,
+                  placeholder: "+20 10 1234 5678",
+                }}
+              />
+            )}
+
+            {/* Step 1 for New User: Name fields */}
+            {isReturningUser === false && currentStep === 1 && (
               <>
                 <FormField
                   {...{
@@ -506,7 +693,8 @@ export default function FormSection() {
               </>
             )}
 
-            {currentStep === 1 && (
+            {/* Step 2 for New User: Contact Info */}
+            {isReturningUser === false && currentStep === 2 && (
               <>
                 <FormField
                   {...{
@@ -534,115 +722,105 @@ export default function FormSection() {
               </>
             )}
 
-            {currentStep === 2 && (
+            {/* Step 3 for New User or Step 2 for Returning User: Tournament/Education Selection */}
+            {((isReturningUser === false && currentStep === 3) || (isReturningUser && existingUser && currentStep === 2)) && (
               <>
-                <SelectField
-                  label="Education Degree"
-                  name="educationDegree"
-                  value={formData.educationDegree}
+                {!existingUser && (
+                  <>
+                    <SelectField
+                      label="Education Degree"
+                      name="educationDegree"
+                      value={formData.educationDegree}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.educationDegree && errors.educationDegree}
+                      options={[
+                        { value: "", label: "Select your degree" },
+                        { value: "high-school", label: "High School" },
+                        { value: "bachelor", label: "Bachelor's Degree" },
+                        { value: "master", label: "Master's Degree" },
+                        { value: "phd", label: "Ph.D." },
+                        { value: "other", label: "Other" },
+                      ]}
+                    />
+                    {shouldShowSchoolField() && (
+                      <AutocompleteField
+                        label={formData.educationDegree === "high-school" ? "School Name" : "University Name"}
+                        name="schoolName"
+                        value={formData.schoolName}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={touched.schoolName && errors.schoolName}
+                        placeholder="Start typing your school or university name..."
+                      />
+                    )}
+                  </>
+                )}
+                <MultiSelectField
+                  label={existingUser ? "Select Tournaments to Join" : "Favorite Games (Select one or more)"}
+                  name="favoriteGame"
+                  value={formData.favoriteGame}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  error={touched.educationDegree && errors.educationDegree}
+                  error={touched.favoriteGame && errors.favoriteGame}
+                  placeholder={existingUser ? "Select tournaments you want to join" : "Select your favorite games"}
                   options={[
-                    { value: "", label: "Select your degree" },
-                    { value: "high-school", label: "High School" },
-                    { value: "bachelor", label: "Bachelor's Degree" },
-                    { value: "master", label: "Master's Degree" },
-                    { value: "phd", label: "Ph.D." },
+                    { value: "", label: existingUser ? "Select tournaments" : "Select your favorite games" },
+                    { value: "valorant", label: "Valorant" },
+                    {
+                      value: "league-of-legends",
+                      label: "League of Legends",
+                    },
+                    { value: "fortnite", label: "Fortnite" },
+                    { value: "fc26", label: "FC26" },
+                    { value: "tekken8", label: "Tekken 8" },
+                    { value: "pubg-mobile", label: "PUBG Mobile" },
+                    { value: "clash-royale", label: "Clash Royale" },
+                    { value: "retro-games", label: "Retro Games" },
                     { value: "other", label: "Other" },
                   ]}
                 />
-                {shouldShowSchoolField() && (
-                  <AutocompleteField
-                    label={formData.educationDegree === "high-school" ? "School Name" : "University Name"}
-                    name="schoolName"
-                    value={formData.schoolName}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.schoolName && errors.schoolName}
-                    placeholder="Start typing your school or university name..."
-                  />
-                )}
-                <SelectField
-                  label="Area of Interest"
-                  name="areaOfInterest"
-                  value={formData.areaOfInterest}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.areaOfInterest && errors.areaOfInterest}
-                  options={[
-                    { value: "", label: "Select your interest" },
-                    { value: "technology", label: "Technology" },
-                    { value: "design", label: "Design" },
-                    { value: "business", label: "Business" },
-                    { value: "marketing", label: "Marketing" },
-                    { value: "education", label: "Education" },
-                    { value: "healthcare", label: "Healthcare" },
-                    { value: "gaming", label: "Gaming" },
-                  ]}
-                />
-                {formData.areaOfInterest === "gaming" && (
-                  <MultiSelectField
-                    label="Favorite Games (Select one or more)"
-                    name="favoriteGame"
-                    value={formData.favoriteGame}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.favoriteGame && errors.favoriteGame}
-                    placeholder="Select your favorite games"
-                    options={[
-                      { value: "", label: "Select your favorite games" },
-                      { value: "valorant", label: "Valorant" },
-                      {
-                        value: "league-of-legends",
-                        label: "League of Legends",
-                      },
-                      { value: "fortnite", label: "Fortnite" },
-                      { value: "fc26", label: "FC26" },
-                      { value: "tekken8", label: "Tekken 8" },
-                      { value: "pubg-mobile", label: "PUBG Mobile" },
-                      { value: "clash-royale", label: "Clash Royale" },
-                      { value: "retro-games", label: "Retro Games" },
-                      { value: "other", label: "Other" },
-                    ]}
-                  />
-                )}
               </>
             )}
 
-            {/* Navigation Buttons */}
-            <div className="flex flex-col md:flex-row gap-3 mt-4">
-              {currentStep > 0 && (
+            {/* Navigation Buttons - Hidden on step 0 */}
+            {currentStep > 0 && (
+              <div className="flex flex-col md:flex-row gap-3 mt-4">
+                {currentStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    className="flex-1 px-5 py-3 bg-white/10 border border-white/20 text-white rounded-lg font-semibold hover:bg-white/20 transition-all"
+                  >
+                    ← Previous
+                  </button>
+                )}
                 <button
-                  type="button"
-                  onClick={handlePrev}
-                  className="flex-1 px-5 py-3 bg-white/10 border border-white/20 text-white rounded-lg font-semibold hover:bg-white/20 transition-all"
+                  type={currentStep === totalSteps - 1 ? "submit" : "button"}
+                  onClick={
+                    currentStep === totalSteps - 1 ? undefined : handleNext
+                  }
+                  disabled={!canGoNext() || isSubmitting}
+                  className="flex-1 px-5 py-3 bg-white/20 border border-white/30 text-white rounded-lg font-semibold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ← Previous
+                  {isSubmitting
+                    ? existingUser ? "Updating..." : "Submitting..."
+                    : currentStep === totalSteps - 1
+                    ? existingUser ? "Register for Tournaments" : "Submit Registration"
+                    : "Continue →"}
                 </button>
-              )}
-              <button
-                type={currentStep === totalSteps - 1 ? "submit" : "button"}
-                onClick={
-                  currentStep === totalSteps - 1 ? undefined : handleNext
-                }
-                disabled={!canGoNext() || isSubmitting}
-                className="flex-1 px-5 py-3 bg-white/20 border border-white/30 text-white rounded-lg font-semibold hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting
-                  ? "Submitting..."
-                  : currentStep === totalSteps - 1
-                  ? "Submit"
-                  : "Continue →"}
-              </button>
-            </div>
+              </div>
+            )}
           </form>
         </div>
       </div>
 
       {/* ✅ Modals */}
       {showSuccessModal && (
-        <SuccessModal onClose={() => setShowSuccessModal(false)} />
+        <SuccessModal 
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)} 
+        />
       )}
       {errorModal.isOpen && (
         <ErrorModal

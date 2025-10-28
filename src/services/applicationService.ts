@@ -18,13 +18,13 @@ export async function submitApplication(
     // Generate email from phone number or name
     const data = {
       name: `${formData.firstName} ${formData.lastName}`,
-      phoneNumber: formData.phoneNumber.trim(),
+      phoneNumber: sanitizePhoneNumber(formData.phoneNumber),
       birthDate: formData.birthDate,
       educationDegree: formData.educationDegree,
       areaOfInterest: formData.areaOfInterest,
       favoriteGame: formData.favoriteGame || null,
-      password: formData.phoneNumber.replace(/\D/g, "") + "TempPassword123!",
-      passwordConfirm: formData.phoneNumber.replace(/\D/g, "") + "TempPassword123!",
+      password: sanitizePhoneNumber(formData.phoneNumber) + "TempPassword123!",
+      passwordConfirm: sanitizePhoneNumber(formData.phoneNumber) + "TempPassword123!",
     };
 
     // Create record in PocketBase "users" collection
@@ -37,6 +37,10 @@ export async function submitApplication(
     return { success: false, error: errorResponse };
   }
 }
+const sanitizePhoneNumber = (phoneNumber: string) => {
+    return phoneNumber.replace(/\D/g, ""); // Remove +, spaces, dashes, etc.
+  };
+
 
 /**
  * Parse PocketBase error response

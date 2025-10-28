@@ -1,10 +1,12 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import FormSection from "./components/FormSection";
+import TournamentFormSection from "./components/TournamentFormSection";
 import Dashboard from "./components/Dashaboard";
 import AdminDashboard from "./components/AdminDashboard";
 
 const router = createBrowserRouter([
   { path: "/", element: <FormSection /> },
+  { path: "/games", element: <TournamentFormSection /> },
   { path: "/admin", element: <Dashboard /> },
   { path: "/admin/dashboard", element: <AdminDashboard /> },
 ]);
