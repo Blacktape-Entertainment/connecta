@@ -819,7 +819,10 @@ export default function TournamentFormSection() {
       {showSuccessModal && (
         <SuccessModal 
           isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)} 
+          shareTitle={"I just registered for Connecta Gaming Event! Join me at El Manara Hall 4, Nov 17-19, 2025!"}
+          shareUrl={"https://worldofconnecta.com/games"}
+          shareText={"Join me at Connecta Gaming Event!"}
+          onClose={() => setShowSuccessModal(false)}
         />
       )}
       {errorModal.isOpen && (

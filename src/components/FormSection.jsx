@@ -642,7 +642,13 @@ export default function FormSection() {
 
       {/* ✅ Modals */}
       {showSuccessModal && (
-        <SuccessModal onClose={() => setShowSuccessModal(false)} />
+        <SuccessModal
+          isOpen={showSuccessModal}
+          shareTitle={"Join me at Connecta Gaming Event!"}
+          shareUrl={"https://worldofconnecta.com"}
+          shareText={"I just registered for Connecta Gaming Event! Join me at El Manara Hall 4, Nov 17-19, 2025!"}
+          onClose={() => setShowSuccessModal(false)}
+        />
       )}
       {errorModal.isOpen && (
         <ErrorModal
