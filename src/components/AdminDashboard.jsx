@@ -46,25 +46,37 @@ const AdminDashboard = () => {
 
   /* 🔹 Fetch Data */
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchUsers = async () => {
       try {
-        const email = sessionStorage.getItem("admin_email");
-        const password = sessionStorage.getItem("admin_password");
-        if (!email || !password) return navigate("/admin");
-
-        await pb.admins.authWithPassword(email, password);
         const response = await pb.collection("users").getList(1, 50, {
           sort: "-created",
+          $cancelKey: "admin-dashboard-users", // Unique key for this request
         });
-        setData(response);
+        
+        if (!isCancelled) {
+          setData(response);
+        }
       } catch (error) {
-        console.error("Error fetching users:", error);
+        if (!isCancelled && error?.isAbort !== true) {
+          console.error("Error fetching users:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
+
     fetchUsers();
-  }, [navigate]);
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isCancelled = true;
+      pb.cancelRequest("admin-dashboard-users");
+    };
+  }, []);
 
   const users = useMemo(() => data?.items || [], [data]);
   const totalUsers = data?.totalItems || 0;
