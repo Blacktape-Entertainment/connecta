@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { gsap } from "gsap";
 import { submitApplication } from "../services/applicationService.ts";
 import pb from "../lib/pocketbase";
+import { detectLanguage } from "../lib/language-detector";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
@@ -417,7 +418,13 @@ export default function FormSection() {
         if (!suggestions.includes(formData.schoolName)) {
           const collection = formData.educationDegree === "high-school" ? "schools" : "universities";
           try {
-            await pb.collection(collection).create({ en_name: formData.schoolName, ar_name: formData.schoolName });
+            // Detect language of school name
+            const language = detectLanguage(formData.schoolName);
+            const recordData = language === 'ar' 
+              ? { en_name: "", ar_name: formData.schoolName }
+              : { en_name: formData.schoolName, ar_name: "" };
+            
+            await pb.collection(collection).create(recordData);
             // Add to the list
             if (collection === "schools") {
               setSchools(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));

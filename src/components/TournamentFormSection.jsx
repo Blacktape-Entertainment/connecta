@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { gsap } from "gsap";
 import pb from "../lib/pocketbase";
+import { detectLanguage } from "../lib/language-detector";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
@@ -189,7 +190,7 @@ export default function TournamentFormSection() {
       case "birthDate": {
         if (!value) return "Birth date is required";
         const birth = new Date(value);
-        if (isNaN(birth.getTime())) return "Invalid date";
+        if (Number.isNaN(birth.getTime())) return "Invalid date";
         const age = new Date().getFullYear() - birth.getFullYear();
         if (age < 7 || age > 80) return "Age must be between 7 and 80";
         return "";
@@ -224,7 +225,7 @@ export default function TournamentFormSection() {
    * ========================= */
   // Sanitize phone number - remove all non-digit characters
   const sanitizePhoneNumber = (phoneNumber) => {
-    return phoneNumber.replace(/\D/g, ""); // Remove +, spaces, dashes, etc.
+    return phoneNumber.replaceAll(/\D/g, ""); // Remove +, spaces, dashes, etc.
   };
 
   // Check phone number for existing user
@@ -265,7 +266,7 @@ export default function TournamentFormSection() {
   const calculateAge = useCallback(() => {
     if (!formData.birthDate) return null;
     const birth = new Date(formData.birthDate);
-    if (isNaN(birth.getTime())) return null;
+    if (Number.isNaN(birth.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
@@ -357,7 +358,7 @@ export default function TournamentFormSection() {
         }
         // Special handling for schoolName - only required if should be shown
         if (f === "schoolName") {
-          return shouldShowSchoolField() ? fieldValue : true;
+          return shouldShowSchoolField ? fieldValue : true;
         }
         return fieldValue && !validateField(f, fieldValue);
       }
@@ -382,7 +383,7 @@ export default function TournamentFormSection() {
         const age = name === "birthDate" ? (() => {
           if (!value) return null;
           const birth = new Date(value);
-          if (isNaN(birth.getTime())) return null;
+          if (Number.isNaN(birth.getTime())) return null;
           const today = new Date();
           let calculatedAge = today.getFullYear() - birth.getFullYear();
           const monthDiff = today.getMonth() - birth.getMonth();
@@ -422,10 +423,10 @@ export default function TournamentFormSection() {
 
   const handleNext = async () => {
     const stepErrors = {};
-    currentStepData.fields.forEach((f) => {
+    for (const f of currentStepData.fields) {
       const err = validateField(f, formData[f]);
       if (err) stepErrors[f] = err;
-    });
+    }
 
     if (Object.keys(stepErrors).length) {
       setErrors((p) => ({ ...p, ...stepErrors }));
@@ -520,7 +521,13 @@ export default function TournamentFormSection() {
         if (!suggestions.includes(formData.schoolName)) {
           const collection = formData.educationDegree === "high-school" ? "schools" : "universities";
           try {
-            await pb.collection(collection).create({ en_name: formData.schoolName, ar_name: formData.schoolName });
+            // Detect language of school name
+            const language = detectLanguage(formData.schoolName);
+            const recordData = language === 'ar' 
+              ? { en_name: "", ar_name: formData.schoolName }
+              : { en_name: formData.schoolName, ar_name: "" };
+            
+            await pb.collection(collection).create(recordData);
             // Add to the list
             if (collection === "schools") {
               setSchools(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));
@@ -631,8 +638,9 @@ export default function TournamentFormSection() {
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl shadow-black/50">
           {/* Tournament Badge */}
           <div className="flex justify-center mb-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-sm font-semibold text-white">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-sm font-semibold text-white">
               <span className="text-lg">🎮</span>
+              {" "}
               Tournament Registration
             </span>
           </div>
