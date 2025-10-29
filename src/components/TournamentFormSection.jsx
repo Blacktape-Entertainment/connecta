@@ -35,6 +35,8 @@ export default function TournamentFormSection() {
   const [existingUser, setExistingUser] = useState(null);
   const [tournamentsToRegister, setTournamentsToRegister] = useState([]);
   const [isReturningUser, setIsReturningUser] = useState(null); // null = not selected, true = returning, false = new
+  const [schools, setSchools] = useState([]);
+  const [universities, setUniversities] = useState([]);
 
   /* =========================
    * 🌀 REFS
@@ -53,6 +55,36 @@ export default function TournamentFormSection() {
       isMountedRef.current = false;
       clearTimeout(interactionTimeoutRef.current);
     };
+  }, []);
+
+  /* =========================
+   * 📚 FETCH SCHOOLS AND UNIVERSITIES
+   * ========================= */
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const records = await pb.collection("schools").getFullList({
+          sort: "en_name",
+        });
+        setSchools(records.map((r) => r.en_name));
+      } catch (err) {
+        console.error("Failed to fetch schools:", err);
+      }
+    };
+
+    const fetchUniversities = async () => {
+      try {
+        const records = await pb.collection("universities").getFullList({
+          sort: "en_name",
+        });
+        setUniversities(records.map((r) => r.en_name));
+      } catch (err) {
+        console.error("Failed to fetch universities:", err);
+      }
+    };
+
+    fetchSchools();
+    fetchUniversities();
   }, []);
 
   /* =========================
@@ -174,7 +206,7 @@ export default function TournamentFormSection() {
 
       case "schoolName":
         // Required only if conditions are met
-        if (shouldShowSchoolField()) {
+        if (shouldShowSchoolField) {
           if (formData.educationDegree === "high-school") {
             return text ? "" : "School name is required";
           }
@@ -244,7 +276,7 @@ export default function TournamentFormSection() {
   }, [formData.birthDate]);
 
   // Check if school field should be displayed
-  const shouldShowSchoolField = useCallback(() => {
+  const shouldShowSchoolField = useMemo(() => {
     const age = calculateAge();
     const isEligibleEducation =
       formData.educationDegree === "high-school" ||
@@ -283,7 +315,7 @@ export default function TournamentFormSection() {
       }
       
       // New user - show full form
-      const showSchool = shouldShowSchoolField();
+      const showSchool = shouldShowSchoolField;
       const baseFields = ["educationDegree"];
       
       if (showSchool) {
@@ -482,6 +514,25 @@ export default function TournamentFormSection() {
 
     setIsSubmitting(true);
     try {
+      // Create new school/university if not exists
+      if (shouldShowSchoolField && formData.schoolName) {
+        const suggestions = formData.educationDegree === "high-school" ? schools : universities;
+        if (!suggestions.includes(formData.schoolName)) {
+          const collection = formData.educationDegree === "high-school" ? "schools" : "universities";
+          try {
+            await pb.collection(collection).create({ en_name: formData.schoolName, ar_name: formData.schoolName });
+            // Add to the list
+            if (collection === "schools") {
+              setSchools(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));
+            } else {
+              setUniversities(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));
+            }
+          } catch (err) {
+            console.error("Failed to create new record:", err);
+          }
+        }
+      }
+
       let result;
       
       // If existing user, only update tournaments_interested_in
@@ -743,7 +794,7 @@ export default function TournamentFormSection() {
                         { value: "other", label: "Other" },
                       ]}
                     />
-                    {shouldShowSchoolField() && (
+                    {shouldShowSchoolField && (
                       <AutocompleteField
                         label={formData.educationDegree === "high-school" ? "School Name" : "University Name"}
                         name="schoolName"
@@ -752,6 +803,7 @@ export default function TournamentFormSection() {
                         onBlur={handleBlur}
                         error={touched.schoolName && errors.schoolName}
                         placeholder="Start typing your school or university name..."
+                        suggestions={formData.educationDegree === "high-school" ? schools : universities}
                       />
                     )}
                   </>

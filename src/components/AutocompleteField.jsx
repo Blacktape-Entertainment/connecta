@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import pb from "../lib/pocketbase";
 
 export default function AutocompleteField({
   label,
@@ -9,45 +8,24 @@ export default function AutocompleteField({
   onBlur,
   error,
   placeholder = "Start typing...",
+  suggestions = [],
 }) {
-  const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [allSchools, setAllSchools] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
   const wrapperRef = useRef(null);
-
-  // Fetch all schools on mount
-  useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        setIsLoading(true);
-        // Note: Collection name is "shools" (typo in backend)
-        const records = await pb.collection("shools").getFullList({
-          sort: "name",
-        });
-        setAllSchools(records.map((r) => r.name));
-      } catch (err) {
-        console.error("Failed to fetch schools:", err);
-        setAllSchools([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchSchools();
-  }, []);
 
   // Filter suggestions based on input
   useEffect(() => {
     if (!value || value.length < 2) {
-      setSuggestions([]);
+      setFilteredSuggestions([]);
       return;
     }
 
-    const filtered = allSchools.filter((school) =>
-      school.toLowerCase().includes(value.toLowerCase())
+    const filtered = suggestions.filter((suggestion) =>
+      suggestion.toLowerCase().includes(value.toLowerCase())
     );
-    setSuggestions(filtered.slice(0, 10)); // Limit to 10 suggestions
-  }, [value, allSchools]);
+    setFilteredSuggestions(filtered.slice(0, 10)); // Limit to 10 suggestions
+  }, [value, suggestions]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -108,19 +86,14 @@ export default function AutocompleteField({
             error ? "border-red-400" : "border-white/20"
           } rounded-lg text-white placeholder-light/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all`}
         />
-        {isLoading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-            <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
-          </div>
-        )}
 
         {/* Suggestions Dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && filteredSuggestions.length > 0 && (
           <div 
             className="absolute left-0 right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl max-h-60 overflow-y-auto"
             style={{ zIndex: 9999 }}
           >
-            {suggestions.map((suggestion, index) => (
+            {filteredSuggestions.map((suggestion, index) => (
               <button
                 key={`${suggestion}-${index}`}
                 type="button"
@@ -134,19 +107,19 @@ export default function AutocompleteField({
         )}
 
         {/* No suggestions message */}
-        {showSuggestions && value.length >= 2 && suggestions.length === 0 && !isLoading && (
+        {showSuggestions && value.length >= 2 && filteredSuggestions.length === 0 && (
           <div 
             className="absolute left-0 right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl px-4 py-3 text-white/60 text-sm"
             style={{ zIndex: 9999 }}
           >
-            No schools found. You can type a custom name.
+            No matches found. You can type a custom name.
           </div>
         )}
 
         {/* Native datalist for browser autocomplete */}
         <datalist id={`${name}-datalist`}>
-          {allSchools.map((school) => (
-            <option key={school} value={school} />
+          {suggestions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
           ))}
         </datalist>
       </div>

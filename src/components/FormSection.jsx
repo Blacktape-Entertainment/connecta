@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { gsap } from "gsap";
 import { submitApplication } from "../services/applicationService.ts";
+import pb from "../lib/pocketbase";
 import logo from "../assets/logo.png";
 import FormField from "./FormField";
 import SelectField from "./SelectField";
@@ -32,6 +33,8 @@ export default function FormSection() {
   const [orbHoverState, setOrbHoverState] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
+  const [schools, setSchools] = useState([]);
+  const [universities, setUniversities] = useState([]);
 
   /* =========================
    * 🌀 REFS
@@ -50,6 +53,36 @@ export default function FormSection() {
       isMountedRef.current = false;
       clearTimeout(interactionTimeoutRef.current);
     };
+  }, []);
+
+  /* =========================
+   * 📚 FETCH SCHOOLS AND UNIVERSITIES
+   * ========================= */
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const records = await pb.collection("schools").getFullList({
+          sort: "en_name",
+        });
+        setSchools(records.map((r) => r.en_name));
+      } catch (err) {
+        console.error("Failed to fetch schools:", err);
+      }
+    };
+
+    const fetchUniversities = async () => {
+      try {
+        const records = await pb.collection("universities").getFullList({
+          sort: "en_name",
+        });
+        setUniversities(records.map((r) => r.en_name));
+      } catch (err) {
+        console.error("Failed to fetch universities:", err);
+      }
+    };
+
+    fetchSchools();
+    fetchUniversities();
   }, []);
 
   /* =========================
@@ -181,7 +214,7 @@ export default function FormSection() {
 
       case "schoolName":
         // Required only if conditions are met
-        if (shouldShowSchoolField()) {
+        if (shouldShowSchoolField) {
           if (formData.educationDegree === "high-school") {
             return text ? "" : "School name is required";
           }
@@ -198,7 +231,7 @@ export default function FormSection() {
    * 🧮 HELPER FUNCTIONS
    * ========================= */
   // Calculate user age from birth date
-  const calculateAge = () => {
+  const calculateAge = useMemo(() => {
     if (!formData.birthDate) return null;
     const birth = new Date(formData.birthDate);
     if (isNaN(birth.getTime())) return null;
@@ -209,23 +242,23 @@ export default function FormSection() {
       age--;
     }
     return age;
-  };
+  }, [formData.birthDate]);
 
   // Check if school field should be displayed
-  const shouldShowSchoolField = () => {
-    const age = calculateAge();
+  const shouldShowSchoolField = useMemo(() => {
+    const age = calculateAge;
     const isEligibleEducation =
       formData.educationDegree === "high-school" ||
       formData.educationDegree === "bachelor";
     return isEligibleEducation && age !== null && age < 27;
-  };
+  }, [formData.educationDegree, calculateAge]);
 
   /* =========================
    * 🪄 STEPS CONFIGURATION
    * ========================= */
   const steps = useMemo(
     () => {
-      const showSchool = shouldShowSchoolField();
+      const showSchool = shouldShowSchoolField;
       const baseFields = ["educationDegree"];
       
       // Add schoolName if conditions are met
@@ -256,7 +289,7 @@ export default function FormSection() {
         },
       ];
     },
-    [formData.areaOfInterest, formData.educationDegree, formData.birthDate]
+    [formData.areaOfInterest, shouldShowSchoolField]
   );
 
   const totalSteps = steps.length;
@@ -378,6 +411,25 @@ export default function FormSection() {
 
     setIsSubmitting(true);
     try {
+      // Create new school/university if not exists
+      if (shouldShowSchoolField && formData.schoolName) {
+        const suggestions = formData.educationDegree === "high-school" ? schools : universities;
+        if (!suggestions.includes(formData.schoolName)) {
+          const collection = formData.educationDegree === "high-school" ? "schools" : "universities";
+          try {
+            await pb.collection(collection).create({ en_name: formData.schoolName, ar_name: formData.schoolName });
+            // Add to the list
+            if (collection === "schools") {
+              setSchools(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));
+            } else {
+              setUniversities(prev => [...prev, formData.schoolName].sort((a, b) => a.localeCompare(b)));
+            }
+          } catch (err) {
+            console.error("Failed to create new record:", err);
+          }
+        }
+      }
+
       // Keep favoriteGame as array - PocketBase now expects array format
       const submissionData = {
         ...formData,
@@ -552,7 +604,7 @@ export default function FormSection() {
                     { value: "other", label: "Other" },
                   ]}
                 />
-                {shouldShowSchoolField() && (
+                {shouldShowSchoolField && (
                   <AutocompleteField
                     label={formData.educationDegree === "high-school" ? "School Name" : "University Name"}
                     name="schoolName"
@@ -561,6 +613,7 @@ export default function FormSection() {
                     onBlur={handleBlur}
                     error={touched.schoolName && errors.schoolName}
                     placeholder="Start typing your school or university name..."
+                    suggestions={formData.educationDegree === "high-school" ? schools : universities}
                   />
                 )}
                 <SelectField
