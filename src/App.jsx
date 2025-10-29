@@ -8,6 +8,7 @@ const TournamentFormSection = lazy(() => import("./components/TournamentFormSect
 const RegistrationForm = lazy(() => import("./components/RegistrationForm"));
 const Dashboard = lazy(() => import("./components/Dashaboard"));
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const NotFound = lazy(() => import("./components/NotFound"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
   { path: "/game-developers-registration", element: <Suspense fallback={<LoadingFallback />}><RegistrationForm /></Suspense> },
   { path: "/admin", element: <Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense> },
   { path: "/admin/dashboard", element: <Suspense fallback={<LoadingFallback />}><AdminDashboard /></Suspense> },
+  { path: "*", element: <Suspense fallback={<LoadingFallback />}><NotFound /></Suspense> },
 ]);
 
 function App() {
