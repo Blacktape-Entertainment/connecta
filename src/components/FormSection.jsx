@@ -188,7 +188,7 @@ export default function FormSection() {
       case "birthDate": {
         if (!value) return "Birth date is required";
         const birth = new Date(value);
-        if (isNaN(birth.getTime())) return "Invalid date";
+        if (Number.isNaN(birth.getTime())) return "Invalid date";
         const age = new Date().getFullYear() - birth.getFullYear();
         if (age < 7 || age > 80) return "Age must be between 7 and 80";
         return "";
@@ -235,7 +235,7 @@ export default function FormSection() {
   const calculateAge = useMemo(() => {
     if (!formData.birthDate) return null;
     const birth = new Date(formData.birthDate);
-    if (isNaN(birth.getTime())) return null;
+    if (Number.isNaN(birth.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
@@ -307,7 +307,7 @@ export default function FormSection() {
         }
         // Special handling for schoolName - only required if should be shown
         if (f === "schoolName") {
-          return shouldShowSchoolField() ? fieldValue : true;
+          return shouldShowSchoolField ? fieldValue : true;
         }
         return fieldValue && !validateField(f, fieldValue);
       }
@@ -332,7 +332,7 @@ export default function FormSection() {
         const age = name === "birthDate" ? (() => {
           if (!value) return null;
           const birth = new Date(value);
-          if (isNaN(birth.getTime())) return null;
+          if (Number.isNaN(birth.getTime())) return null;
           const today = new Date();
           let calculatedAge = today.getFullYear() - birth.getFullYear();
           const monthDiff = today.getMonth() - birth.getMonth();
@@ -340,7 +340,7 @@ export default function FormSection() {
             calculatedAge--;
           }
           return calculatedAge;
-        })() : calculateAge();
+        })() : calculateAge;
         
         const education = name === "educationDegree" ? value : prev.educationDegree;
         const isEligible = (education === "high-school" || education === "bachelor") && 
@@ -367,10 +367,10 @@ export default function FormSection() {
 
   const handleNext = () => {
     const stepErrors = {};
-    currentStepData.fields.forEach((f) => {
+    for (const f of currentStepData.fields) {
       const err = validateField(f, formData[f]);
       if (err) stepErrors[f] = err;
-    });
+    }
 
     if (Object.keys(stepErrors).length) {
       setErrors((p) => ({ ...p, ...stepErrors }));

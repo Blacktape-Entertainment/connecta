@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load components for route-based code-splitting
 const FormSection = lazy(() => import("./components/FormSection"));
@@ -25,7 +26,11 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
+  );
 }
 
 export default App;
