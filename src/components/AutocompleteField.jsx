@@ -66,7 +66,7 @@ export default function AutocompleteField({
     <div className="relative">
       <label
         htmlFor={name}
-        className="block text-sm font-semibold text-light mb-2"
+        className="block text-sm font-bold text-light mb-2.5"
       >
         {label}
       </label>
