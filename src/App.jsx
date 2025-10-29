@@ -22,7 +22,7 @@ const LoadingFallback = () => (
 const router = createBrowserRouter([
   { path: "/", element: <Suspense fallback={<LoadingFallback />}><FormSection /></Suspense> },
   { path: "/games", element: <Suspense fallback={<LoadingFallback />}><TournamentFormSection /></Suspense> },
-  { path: "/registration", element: <Suspense fallback={<LoadingFallback />}><RegistrationForm /></Suspense> },
+  { path: "/game-developers-registration", element: <Suspense fallback={<LoadingFallback />}><RegistrationForm /></Suspense> },
   { path: "/admin", element: <Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense> },
   { path: "/admin/dashboard", element: <Suspense fallback={<LoadingFallback />}><AdminDashboard /></Suspense> },
 ]);
