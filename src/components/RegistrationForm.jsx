@@ -1278,7 +1278,7 @@ export default function RegistrationForm() {
    * 🎨 RENDER
    * ========================= */
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-linear-to-br from-dark via-gradient2 to-dark">
+    <section className="relative w-full bg-linear-to-br from-dark via-gradient2 to-dark">
       {/* Background Orb */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Orb

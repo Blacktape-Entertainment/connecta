@@ -38,7 +38,7 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-6 md:px-6 md:py-8 bg-black">
+        <section className="relative flex items-center justify-center px-4 py-6 md:px-6 md:py-8 bg-black min-h-screen">
           <div className="fixed inset-0 z-0">
             <div className="absolute inset-0 bg-linear-to-br from-purple-900/20 via-transparent to-pink-900/20" />
           </div>

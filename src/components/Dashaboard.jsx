@@ -51,7 +51,7 @@ const Dashboard = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-6 md:px-6 md:py-8"
+      className="relative flex items-center justify-center px-4 py-6 md:px-6 md:py-8 min-h-screen"
     >
       {/* Orb */}
       <div className="fixed inset-0 z-0 flex items-center justify-center">

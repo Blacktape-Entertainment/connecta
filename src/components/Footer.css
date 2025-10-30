@@ -1,7 +1,9 @@
 .app-footer {
   position: relative;
   width: 100%;
+  margin: 0;
   margin-top: auto;
+  padding: 0;
   background: linear-gradient(135deg, var(--color-gradient2) 0%, rgba(13, 13, 13, 0.95) 50%, var(--color-gradient2) 100%);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(196, 30, 120, 0.1);
@@ -138,17 +140,4 @@
   .footer-separator {
     display: none;
   }
-}
-
-/* Ensure footer stays at bottom */
-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
 }
