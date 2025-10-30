@@ -9,6 +9,7 @@ import { SuccessModal } from "./SuccessModal";
 import ErrorModal from "./ErrorModal";
 import Orb from "./Orb";
 import logo from "../assets/logo.png";
+import pb from "../lib/pocketbase";
 
 export default function RegistrationForm() {
   /* =========================
@@ -349,13 +350,66 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual submission logic here
-      // Example: await submitToAPI(formData);
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Prepare data for PocketBase submission
+      const data = {
+        studioName: formData.studioName,
+        contactPerson: formData.contactPerson,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        studioLocation: formData.studioLocation,
+        studioType: formData.studioType,
+        yearsOfOperation: formData.yearsOfOperation,
+        gameTitle: formData.gameTitle,
+        gameGenre: formData.gameGenre,
+        gameGenreOther: formData.gameGenreOther,
+        targetPlatforms: formData.targetPlatforms,
+        targetPlatformsOther: formData.targetPlatformsOther,
+        gameDevelopmentStatus: formData.gameDevelopmentStatus,
+        releaseDate: formData.releaseDate,
+        gameAvailability: formData.gameAvailability,
+        gameAvailabilityOther: formData.gameAvailabilityOther,
+        registeredBusiness: formData.registeredBusiness,
+        monetizationModel: formData.monetizationModel,
+        monetizationModelOther: formData.monetizationModelOther,
+        totalRevenue: formData.totalRevenue,
+        fundingSource: formData.fundingSource,
+        fundingSourceOther: formData.fundingSourceOther,
+        businessPlan: formData.businessPlan,
+        seekingInvestment: formData.seekingInvestment,
+        pressKit: formData.pressKit,
+        marketingMaterials: formData.marketingMaterials,
+        websiteUrl: formData.websiteUrl,
+        facebookUrl: formData.facebookUrl,
+        instagramUrl: formData.instagramUrl,
+        twitterUrl: formData.twitterUrl,
+        youtubeUrl: formData.youtubeUrl,
+        tiktokUrl: formData.tiktokUrl,
+        discordUrl: formData.discordUrl,
+        otherSocialUrl: formData.otherSocialUrl,
+        exhibitionSetup: formData.exhibitionSetup,
+        exhibitionSetupComments: formData.exhibitionSetupComments,
+        demoBuildStatus: formData.demoBuildStatus,
+        demoDuration: formData.demoDuration,
+        gamePlayability: formData.gamePlayability,
+        playerStatistics: formData.playerStatistics,
+        previousExhibition: formData.previousExhibition,
+        motivationWhy: formData.motivationWhy,
+        gameUniqueness: formData.gameUniqueness,
+        targetAudience: formData.targetAudience,
+        targetAudienceOther: formData.targetAudienceOther,
+        gameTrailerUrl: formData.gameTrailerUrl,
+        gameScreenshotsUrl: formData.gameScreenshotsUrl,
+        pitchDeckUrl: formData.pitchDeckUrl,
+        ipConfirmation: formData.ipConfirmation,
+        commitmentConfirmation: formData.commitmentConfirmation,
+        hearAbout: formData.hearAbout,
+        hearAboutOther: formData.hearAboutOther,
+      };
 
-      console.log("Form submitted:", formData);
+      // Submit to PocketBase
+      const record = await pb.collection('game_developers').create(data);
+      
+      console.log("Form submitted successfully:", record);
       
       // Clear saved draft after successful submission
       clearSavedData();
@@ -365,7 +419,7 @@ export default function RegistrationForm() {
       console.error("Submission error:", error);
       setErrorModal({
         isOpen: true,
-        message: "Failed to submit the form. Please try again later.",
+        message: error?.message || "Failed to submit the form. Please try again later.",
       });
     } finally {
       setIsSubmitting(false);
