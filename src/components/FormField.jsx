@@ -9,10 +9,10 @@ export default function FormField({
   placeholder,
 }) {
   return (
-    <div className="flex flex-col gap-1.5 group">
+    <div className="flex flex-col gap-2 group">
       <label
         htmlFor={name}
-        className="text-light font-body text-xs font-medium tracking-wide transition-colors group-focus-within:text-gradient1"
+        className="text-light font-body text-sm font-semibold tracking-wide transition-colors group-focus-within:text-gradient1"
       >
         {label}
       </label>

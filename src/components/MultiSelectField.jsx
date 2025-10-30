@@ -29,10 +29,10 @@ export default function MultiSelectField({
     .map((opt) => opt.label);
 
   return (
-    <div className="flex flex-col gap-1.5 group">
+    <div className="flex flex-col gap-2 group">
       <label
         htmlFor={name}
-        className="text-light font-body text-xs font-medium tracking-wide transition-colors group-focus-within:text-gradient1"
+        className="text-light font-body text-sm font-semibold tracking-wide transition-colors group-focus-within:text-gradient1"
       >
         {label}
       </label>
@@ -42,7 +42,7 @@ export default function MultiSelectField({
         } rounded-lg px-3 py-2 text-light font-body text-sm outline-none transition-all duration-300 focus-within:border-gradient1 focus-within:bg-light/15 focus-within:ring-1 focus-within:ring-gradient1/30 hover:border-gradient1/60 hover:bg-light/12`}
       >
         {/* Selected Values Display */}
-        <div className="min-h-[24px] mb-2">
+        <div className="min-h-6 mb-2">
           {selectedLabels.length === 0 ? (
             <span className="text-light/40 text-sm">{placeholder}</span>
           ) : (

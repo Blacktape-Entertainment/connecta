@@ -5,8 +5,10 @@ import ErrorBoundary from "./components/ErrorBoundary";
 // Lazy load components for route-based code-splitting
 const FormSection = lazy(() => import("./components/FormSection"));
 const TournamentFormSection = lazy(() => import("./components/TournamentFormSection"));
+const RegistrationForm = lazy(() => import("./components/RegistrationForm"));
 const Dashboard = lazy(() => import("./components/Dashaboard"));
 const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const NotFound = lazy(() => import("./components/NotFound"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -21,8 +23,10 @@ const LoadingFallback = () => (
 const router = createBrowserRouter([
   { path: "/", element: <Suspense fallback={<LoadingFallback />}><FormSection /></Suspense> },
   { path: "/games", element: <Suspense fallback={<LoadingFallback />}><TournamentFormSection /></Suspense> },
+  { path: "/game-developers-registration", element: <Suspense fallback={<LoadingFallback />}><RegistrationForm /></Suspense> },
   { path: "/admin", element: <Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense> },
   { path: "/admin/dashboard", element: <Suspense fallback={<LoadingFallback />}><AdminDashboard /></Suspense> },
+  { path: "*", element: <Suspense fallback={<LoadingFallback />}><NotFound /></Suspense> },
 ]);
 
 function App() {
