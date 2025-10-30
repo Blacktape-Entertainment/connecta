@@ -367,7 +367,12 @@ const AdminDashboard = () => {
                 strokeDasharray="3 3"
                 stroke="rgba(255,255,255,0.1)"
               />
-              <XAxis type="number" tick={{ fill: "white" }} axisLine={false} />
+              <XAxis 
+                type="number" 
+                tick={{ fill: "white" }} 
+                axisLine={false}
+                allowDecimals={false}
+              />
               <YAxis
                 type="category"
                 dataKey="name"
