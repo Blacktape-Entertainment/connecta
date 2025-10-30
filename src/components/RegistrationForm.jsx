@@ -1522,9 +1522,9 @@ export default function RegistrationForm() {
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        shareTitle="I registered for Connecta 2025!"
-        shareUrl="https://worldofconnecta.com"
-        shareText="I just registered for Connecta 2025 Indie Game Developer Exhibition! Join me at El Manara Hall 4, Nov 17-19, 2025!"
+        shareTitle="You registered for Connecta 2025 Game Developer Exhibition!"
+        shareUrl="https://connectaict.com/game-developer-registration"
+        shareText="I just registered for Connecta 2025 Game Developer Exhibition! Join me at El Manara Hall 4, Nov 17-19, 2025!"
       />
 
       {/* Error Modal */}
