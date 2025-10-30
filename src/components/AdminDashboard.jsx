@@ -275,11 +275,7 @@ const AdminDashboard = () => {
   };
 
   if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-200 text-lg">
-        Loading Dashboard...
-      </div>
-    );
+    return <LoadingScreen isLoading={loading} />;
 
   /* ============================ JSX ============================ */
   return (

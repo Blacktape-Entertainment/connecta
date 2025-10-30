@@ -86,11 +86,6 @@ export default function NotFound() {
             </div>
           </div> */}
         </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-light/50 text-sm">
-          <p>© 2025 Connecta - Cairo ICT</p>
-        </div>
       </div>
     </section>
   );
